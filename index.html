@@ -361,8 +361,13 @@ textarea{resize:none;min-height:70px}
       </div>
       <div id="resetErr" style="color:#fca5a5;font-size:.82rem;min-height:16px;text-align:center"></div>
       <div id="resetSuccess" style="display:none;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);border-radius:10px;padding:14px;color:#6ee7b7;font-size:.85rem;text-align:center;line-height:1.7">
-        ✅ 재설정 이메일을 보냈습니다!<br>
-        <span style="font-size:.78rem;opacity:.85">받은 편지함을 확인하세요.<br>이메일이 안 오면 스팸함을 확인해주세요.</span>
+        ✅ 재설정 메일을 발송했습니다!<br>
+        <span style="font-size:.78rem;opacity:.85">
+        📬 받은 편지함을 확인하세요.<br>
+        📁 이메일이 안 오면 스팸함을 확인해주세요.<br>
+        ❌ 그래도 없으면 이메일 주소가 틀린 것입니다.<br>
+        가입할 때 사용한 이메일을 다시 확인해주세요.
+        </span>
       </div>
       <button id="btnReset" onclick="doResetPw()" class="auth-btn">📨 재설정 메일 보내기</button>
       <button onclick="hideResetForm()" class="auth-link">← 로그인으로 돌아가기</button>
