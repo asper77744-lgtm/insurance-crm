@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>보험 고객 관리</title>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f0f4f8;--surface:#fff;--surface2:#f8fafc;
+  --primary:#1e40af;--primary-light:#3b82f6;--primary-bg:#eff6ff;
+  --success:#10b981;--warning:#f59e0b;--danger:#ef4444;
+  --border:#e2e8f0;--text:#1e293b;--muted:#64748b;--subtle:#94a3b8;
+  --shadow:0 2px 8px rgba(0,0,0,.08);--shadow-lg:0 8px 32px rgba(0,0,0,.14);
+  --header-h:56px;--bottom-h:64px;
+}
+body{font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;overflow-x:hidden}
+
+/* ══ HEADER ══ */
+.app-header{
+  background:linear-gradient(135deg,#1e3a8a 0%,#1e40af 60%,#2563eb 100%);
+  color:#fff;padding:0 16px;display:flex;align-items:center;gap:10px;
+  height:var(--header-h);position:fixed;top:0;left:0;right:0;z-index:300;
+  box-shadow:0 2px 12px rgba(30,64,175,.45);
+}
+.app-logo{font-size:1.05rem;font-weight:700;display:flex;align-items:center;gap:7px;flex:1}
+.header-actions{display:flex;gap:6px}
+.icon-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;width:36px;height:36px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all .2s}
+.icon-btn:hover,.icon-btn:active{background:rgba(255,255,255,.3)}
+
+/* ══ MAIN SCROLL AREA ══ */
+.main-scroll{padding-top:var(--header-h);padding-bottom:var(--bottom-h);min-height:100vh}
+
+/* ══ STATS ══ */
+.stats-bar{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 14px;background:#fff;border-bottom:1px solid var(--border)}
+@media(min-width:600px){.stats-bar{grid-template-columns:repeat(4,1fr);}}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:9px}
+.stat-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.stat-icon.blue{background:#eff6ff}.stat-icon.green{background:#ecfdf5}.stat-icon.yellow{background:#fffbeb}.stat-icon.red{background:#fef2f2}
+.stat-val{font-size:1.25rem;font-weight:700;line-height:1}
+.stat-lbl{font-size:.68rem;color:var(--muted);margin-top:1px}
+
+/* ══ ALERT BAR ══ */
+.alert-bar{background:#fffbeb;border-bottom:1px solid #fde68a;padding:9px 14px;display:none;align-items:flex-start;gap:8px;flex-wrap:wrap}
+.alert-bar.show{display:flex}
+.alert-bar-text{font-size:.8rem;font-weight:600;color:#92400e;white-space:nowrap;margin-top:2px}
+.alert-chip{background:#fef9c3;border:1px solid #fde68a;border-radius:99px;padding:2px 9px;font-size:.73rem;color:#854d0e;font-weight:500;margin:2px}
+
+/* ══ TOOLBAR ══ */
+.toolbar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:var(--header-h);z-index:100}
+.search-box{display:flex;align-items:center;gap:7px;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:8px 12px;flex:1}
+.search-box input{border:none;background:none;outline:none;width:100%;font-size:.88rem;color:var(--text);font-family:inherit}
+.search-box input::placeholder{color:var(--subtle)}
+.filter-btn{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:8px 10px;font-size:.8rem;color:var(--muted);cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px}
+.filter-btn.active{background:var(--primary-bg);border-color:var(--primary-light);color:var(--primary);font-weight:600}
+
+/* ══ FILTER PILLS (mobile) ══ */
+.filter-pills{display:flex;gap:6px;padding:8px 14px;overflow-x:auto;scrollbar-width:none;background:#fff;border-bottom:1px solid var(--border)}
+.filter-pills::-webkit-scrollbar{display:none}
+.pill{padding:5px 13px;border-radius:99px;border:1.5px solid var(--border);font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap;background:#fff;color:var(--muted);transition:all .15s}
+.pill.active{background:var(--primary);border-color:var(--primary);color:#fff}
+
+/* ══ VIEW TOGGLE ══ */
+.view-toggle{display:flex;gap:0;background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-right:4px}
+.view-btn{padding:7px 9px;border:none;background:none;cursor:pointer;color:var(--muted);font-size:.85rem;transition:all .15s}
+.view-btn.active{background:#fff;color:var(--primary);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+/* ══ CARD LIST (mobile default) ══ */
+.card-list{display:flex;flex-direction:column;gap:10px;padding:12px 14px}
+.customer-card{background:#fff;border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:all .18s;-webkit-user-select:none;user-select:none}
+.customer-card:active{transform:scale(.98);box-shadow:none}
+
+.card-top{padding:14px 14px 10px;display:flex;align-items:flex-start;gap:12px}
+.card-avatar{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:#fff;flex-shrink:0;font-family:'Pretendard',sans-serif}
+.card-main{flex:1;min-width:0}
+.card-name-row{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.card-name{font-size:1rem;font-weight:700}
+.card-phone{font-size:.8rem;color:var(--muted);margin-top:1px}
+a.tel-link{color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:3px}
+a.tel-link:hover{color:var(--primary);text-decoration:underline}
+a.tel-link:active{opacity:.7}
+.card-job{font-size:.75rem;color:var(--subtle)}
+
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:.69rem;font-weight:700}
+.badge-active{background:#dcfce7;color:#15803d}
+.badge-renewal{background:#fef3c7;color:#92400e;animation:blink-badge 2s infinite}
+.badge-expired{background:#fee2e2;color:#991b1b}
+.badge-fam{background:#ede9fe;color:#5b21b6;font-size:.68rem;padding:1px 6px}
+@keyframes blink-badge{0%,100%{opacity:1}50%{opacity:.6}}
+.alert-dot{width:7px;height:7px;border-radius:50%;background:var(--danger);display:inline-block;margin-left:3px;animation:blink-dot 1.4s infinite;vertical-align:middle}
+@keyframes blink-dot{0%,100%{opacity:1}50%{opacity:.1}}
+
+.card-divider{height:1px;background:var(--border);margin:0 14px}
+
+.card-section{padding:10px 14px}
+.card-section-title{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;display:flex;align-items:center;gap:5px}
+
+/* Insurance pills in card */
+.ins-list{display:flex;flex-direction:column;gap:5px}
+.ins-row{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--surface2);border-radius:8px;padding:7px 10px;border:1px solid var(--border)}
+.ins-row.alert-ins{border-left:3px solid var(--danger)}
+.ins-info{flex:1;min-width:0}
+.ins-name{font-size:.83rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ins-detail{font-size:.73rem;color:var(--muted);margin-top:1px}
+.ins-price{font-size:.82rem;font-weight:700;color:var(--primary);white-space:nowrap}
+.ins-total{font-size:.78rem;font-weight:700;color:var(--primary);text-align:right;margin-top:5px}
+
+/* Family pills */
+.fam-pills{display:flex;flex-wrap:wrap;gap:5px}
+.fam-pill{background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:5px 9px;font-size:.75rem}
+.fam-pill .fam-name{font-weight:700;color:#4c1d95}
+.fam-pill .fam-rel{color:#7c3aed;margin-left:3px}
+.fam-pill .fam-info{color:var(--muted);font-size:.7rem;display:block;margin-top:1px}
+
+/* Car/silseon row */
+.info-row{display:flex;flex-wrap:wrap;gap:6px}
+.info-chip{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:.76rem;display:flex;align-items:center;gap:5px}
+.info-chip.alert-chip-red{border-color:#fecaca;background:#fef2f2}
+.info-chip .chip-label{color:var(--muted);font-size:.68rem}
+.info-chip .chip-val{font-weight:600;color:var(--text)}
+
+.card-actions{padding:0 14px 14px;display:flex;gap:7px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:8px 14px;border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600;border:none;transition:all .15s;white-space:nowrap;font-family:inherit}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:active{background:#1d4ed8}
+.btn-outline{background:#fff;color:var(--primary);border:1px solid var(--border)}
+.btn-outline:active{background:var(--primary-bg)}
+.btn-danger{background:#fee2e2;color:var(--danger);border:1px solid #fecaca}
+.btn-danger:active{background:#fecaca}
+.btn-sm{padding:7px 12px;font-size:.8rem}
+.btn-full{width:100%}
+
+/* ══ TABLE VIEW (desktop) ══ */
+.table-view{display:none}
+.table-wrap{overflow-x:auto;background:#fff}
+table.main-table{width:100%;border-collapse:collapse;min-width:980px}
+.main-table thead tr{background:linear-gradient(to bottom,#f8fafc,#f1f5f9);border-bottom:2px solid var(--border)}
+.main-table th{padding:10px 12px;text-align:left;font-size:.7rem;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;cursor:pointer;user-select:none}
+.main-table th:hover{color:var(--primary)}
+.main-table tbody tr{border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer}
+.main-table tbody tr:hover{background:#f8fafc}
+.main-table td{padding:9px 12px;font-size:.83rem;vertical-align:top}
+.ins-mini{display:flex;flex-direction:column;gap:3px}
+.ins-mini-row{font-size:.74rem;background:#f8fafc;border-left:3px solid var(--border);border-radius:0 4px 4px 0;padding:3px 8px;white-space:nowrap}
+.ins-mini-row.alert{border-left-color:var(--danger)}
+.ins-mini-row .co{font-weight:700}
+.ins-total-t{font-size:.72rem;color:var(--primary);font-weight:700;margin-top:3px}
+
+/* ══ EMPTY ══ */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-icon{font-size:3rem;margin-bottom:12px;opacity:.4}
+.empty-text{font-size:.95rem;font-weight:600;margin-bottom:6px}
+.empty-sub{font-size:.82rem;color:var(--subtle)}
+
+/* ══ BOTTOM NAV (mobile FAB) ══ */
+.fab{
+  position:fixed;bottom:calc(var(--bottom-h) - 20px);right:16px;z-index:200;
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--primary-light));
+  color:#fff;border:none;cursor:pointer;
+  box-shadow:0 4px 16px rgba(30,64,175,.45);
+  display:flex;align-items:center;justify-content:center;font-size:1.5rem;
+  transition:all .2s;
+}
+.fab:active{transform:scale(.92)}
+.bottom-bar{
+  position:fixed;bottom:0;left:0;right:0;height:var(--bottom-h);z-index:200;
+  background:#fff;border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-around;
+  padding:0 10px;padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.bottom-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 14px;border:none;background:none;cursor:pointer;color:var(--muted);font-size:.65rem;font-weight:600;font-family:inherit;transition:color .15s;min-width:55px}
+.bottom-btn .bb-icon{font-size:1.2rem}
+.bottom-btn.active{color:var(--primary)}
+
+/* ══ MODAL ══ */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:500;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px)}
+.modal-overlay.open{display:flex}
+.modal{
+  background:#fff;border-radius:20px 20px 0 0;width:100%;
+  max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);
+  animation:slideUp .28s cubic-bezier(.34,1.56,.64,1);
+  padding-bottom:env(safe-area-inset-bottom,16px);
+}
+@media(min-width:640px){
+  .modal-overlay{align-items:center}
+  .modal{border-radius:16px;max-width:820px;max-height:90vh}
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:99px;margin:12px auto 0}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:10}
+.modal-title{font-size:.98rem;font-weight:700}
+.modal-close{width:30px;height:30px;border:none;background:var(--bg);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.9rem}
+.modal-body{padding:16px 18px}
+.modal-footer{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;background:#fff;position:sticky;bottom:0}
+
+/* ══ FORM ══ */
+.form-section{margin-bottom:20px}
+.form-section-title{font-size:.72rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:11px;padding-bottom:7px;border-bottom:2px solid var(--primary-bg)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:480px){.form-grid{grid-template-columns:1fr}.form-grid-3{grid-template-columns:1fr 1fr}}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group.full{grid-column:1/-1}
+label{font-size:.76rem;font-weight:600;color:var(--muted)}
+input[type=text],input[type=tel],input[type=date],input[type=number],input[type=email],select,textarea{
+  border:1.5px solid var(--border);border-radius:9px;padding:10px 12px;font-size:.9rem;
+  outline:none;width:100%;color:var(--text);background:#fff;
+  transition:border-color .14s,box-shadow .14s;font-family:inherit;-webkit-appearance:none;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(59,130,246,.11)}
+textarea{resize:none;min-height:70px}
+.ssn-row{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
+.ssn-dash{color:var(--muted);font-weight:700;text-align:center;font-size:1.1rem}
+
+/* ══ DYNAMIC TABLE ══ */
+.dyn-block{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.dyn-row{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;position:relative}
+.dyn-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(min-width:600px){.dyn-row-grid.ins-grid{grid-template-columns:1fr 1fr 1fr}}
+.dyn-row .del-row-btn{position:absolute;top:8px;right:8px;width:26px;height:26px;border:none;background:#fee2e2;color:var(--danger);border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.8rem}
+.dyn-row .del-row-btn:active{background:#fecaca}
+.add-row-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:none;border:1.5px dashed var(--primary-light);border-radius:10px;color:var(--primary);font-size:.83rem;font-weight:600;cursor:pointer;width:100%;font-family:inherit;transition:all .15s}
+.add-row-btn:active{background:var(--primary-bg)}
+
+/* MEMO */
+.memo-list{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+.memo-item{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--primary-light);border-radius:9px;padding:10px 12px;position:relative}
+.memo-date{font-size:.69rem;color:var(--subtle);margin-bottom:3px}
+.memo-text{font-size:.84rem;line-height:1.5;padding-right:28px}
+.memo-del{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--subtle);cursor:pointer;font-size:.8rem;padding:3px 6px;border-radius:5px}
+.memo-del:active{background:#fee2e2;color:var(--danger)}
+.memo-add-row{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+
+/* TOAST */
+.toast{position:fixed;bottom:calc(var(--bottom-h) + 12px);left:50%;transform:translateX(-50%) translateY(80px);background:#1e293b;color:#fff;padding:11px 20px;border-radius:99px;font-size:.84rem;font-weight:500;z-index:9999;opacity:0;transition:all .28s;white-space:nowrap;box-shadow:var(--shadow-lg)}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.toast.success{background:#059669}
+.toast.warning{background:#d97706}
+
+/* PAGINATION */
+.pagination{display:flex;align-items:center;justify-content:center;gap:6px;padding:14px;background:#fff;border-top:1px solid var(--border)}
+.page-btn{width:34px;height:34px;border:1px solid var(--border);background:#fff;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:600}
+.page-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.page-count{font-size:.8rem;color:var(--muted);padding:0 8px}
+
+/* DETAIL SHEET */
+.detail-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:600;display:none;backdrop-filter:blur(3px)}
+.detail-overlay.open{display:block}
+.detail-sheet{position:fixed;bottom:0;left:0;right:0;max-height:94vh;overflow-y:auto;background:#fff;border-radius:20px 20px 0 0;z-index:601;animation:slideUp .28s cubic-bezier(.34,1.56,.64,1);padding-bottom:env(safe-area-inset-bottom,20px)}
+@media(min-width:640px){
+  .detail-sheet{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;max-width:700px;max-height:88vh;border-radius:16px;animation:none}
+}
+.detail-handle{width:36px;height:4px;background:var(--border);border-radius:99px;margin:12px auto 0}
+.detail-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;position:sticky;top:0;background:#fff;z-index:10}
+.detail-avatar{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:#fff;flex-shrink:0}
+.detail-name{font-size:1.05rem;font-weight:700}
+.detail-sub{font-size:.78rem;color:var(--muted)}
+.detail-close{margin-left:auto;width:30px;height:30px;border:none;background:var(--bg);border-radius:8px;cursor:pointer;color:var(--muted);font-size:.9rem;display:flex;align-items:center;justify-content:center}
+.detail-body{padding:14px 18px;display:flex;flex-direction:column;gap:16px}
+.detail-section-title{font-size:.7rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;padding-bottom:6px;border-bottom:1.5px solid var(--primary-bg)}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.detail-field{background:var(--surface2);border-radius:8px;padding:8px 10px}
+.detail-field .d-label{font-size:.68rem;color:var(--muted);font-weight:600;margin-bottom:2px}
+.detail-field .d-val{font-size:.85rem;font-weight:500;word-break:break-all}
+.detail-footer{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;position:sticky;bottom:0;background:#fff}
+
+
+/* ══ BACKUP MODAL ══ */
+.btab{flex:1;padding:9px;border:none;border-radius:8px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:inherit;background:none;color:var(--muted);transition:all .15s}
+.btab-active{background:var(--primary);color:#fff}
+.backup-code-box{background:#1e293b;color:#e2e8f0;border-radius:10px;padding:14px;font-family:monospace;font-size:.72rem;word-break:break-all;line-height:1.6;max-height:120px;overflow-y:auto;user-select:all;-webkit-user-select:all;cursor:text;border:1px solid #334155}
+.backup-action-btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border-radius:10px;border:none;font-size:.9rem;font-weight:600;cursor:pointer;width:100%;font-family:inherit;transition:all .15s}
+.backup-action-btn:active{opacity:.8}
+.restore-input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:12px;font-family:monospace;font-size:.75rem;resize:none;height:110px;outline:none;line-height:1.5}
+.restore-input:focus{border-color:var(--primary-light)}
+
+@media print{.app-header,.bottom-bar,.fab,.toolbar,.stats-bar,.alert-bar,.modal-overlay,.detail-overlay,.toast{display:none!important}.card-list{gap:0}.customer-card{border-radius:0;box-shadow:none;border:none;border-bottom:1px solid #ccc}}
+</style>
+</head>
+<body>
+
+<!-- 로딩 화면 -->
+<div id="loadingScreen" style="position:fixed;inset:0;background:#1e40af;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#fff">
+  <div style="font-size:3rem">🛡️</div>
+  <div style="font-size:1.15rem;font-weight:700">보험 고객 관리</div>
+  <div class="ld-msg" style="font-size:.85rem;opacity:.7">잠시만 기다려주세요...</div>
+  <div style="width:44px;height:44px;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:ldSpin .8s linear infinite;margin-top:4px"></div>
+</div>
+<style>@keyframes ldSpin{to{transform:rotate(360deg)}}</style>
+
+<!-- 로그인/회원가입 화면 -->
+<div id="authScreen" style="display:none;position:fixed;inset:0;background:linear-gradient(135deg,#1e3a8a,#1e40af,#2563eb);z-index:8000;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow-y:auto">
+  <div style="width:100%;max-width:380px">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:2.8rem;margin-bottom:8px">🛡️</div>
+      <div style="font-size:1.3rem;font-weight:700;color:#fff">보험 고객 관리</div>
+      <div style="font-size:.82rem;color:rgba(255,255,255,.6);margin-top:4px">클라우드 자동 백업 버전</div>
+    </div>
+    <!-- 탭 -->
+    <div style="display:flex;background:rgba(0,0,0,.2);border-radius:12px;padding:4px;margin-bottom:20px">
+      <button id="tabLogin" class="auth-tab auth-tab-active" onclick="setAuthTab('login')">로그인</button>
+      <button id="tabSignup" class="auth-tab" onclick="setAuthTab('signup')">회원가입</button>
+    </div>
+    <!-- 로그인 폼 -->
+    <div id="loginForm" style="display:flex;flex-direction:column;gap:12px">
+      <input id="loginEmail" type="email" placeholder="이메일" class="auth-input" onkeydown="if(event.key==='Enter')document.getElementById('loginPw').focus()">
+      <input id="loginPw" type="password" placeholder="비밀번호" class="auth-input" onkeydown="if(event.key==='Enter')doLogin()">
+      <div id="loginErr" style="color:#fca5a5;font-size:.82rem;min-height:16px;text-align:center"></div>
+      <button id="btnLogin" onclick="doLogin()" class="auth-btn">로그인</button>
+      <button onclick="showResetForm()" class="auth-link">비밀번호를 잊으셨나요?</button>
+    </div>
+    <!-- 회원가입 폼 -->
+    <div id="signupForm" style="display:none;flex-direction:column;gap:12px">
+      <input id="signupEmail" type="email" placeholder="이메일" class="auth-input">
+      <input id="signupPw" type="password" placeholder="비밀번호 (6자 이상)" class="auth-input">
+      <input id="signupPw2" type="password" placeholder="비밀번호 확인" class="auth-input" onkeydown="if(event.key==='Enter')doSignup()">
+      <div id="signupErr" style="color:#fca5a5;font-size:.82rem;min-height:16px;text-align:center"></div>
+      <div id="signupSuccess" style="display:none;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);border-radius:10px;padding:12px;color:#6ee7b7;font-size:.85rem;text-align:center">
+        ✅ 가입 완료! 이메일 인증 후 로그인하세요.<br><span style="font-size:.78rem;opacity:.8">(이메일이 안 오면 스팸함 확인)</span>
+      </div>
+      <button id="btnSignup" onclick="doSignup()" class="auth-btn">회원가입</button>
+    </div>
+    <!-- 비밀번호 재설정 폼 -->
+    <div id="resetForm" style="display:none;flex-direction:column;gap:12px">
+      <div style="color:rgba(255,255,255,.8);font-size:.88rem;text-align:center">가입한 이메일로 재설정 링크를 보내드립니다.</div>
+      <input id="resetEmail" type="email" placeholder="이메일" class="auth-input">
+      <div id="resetErr" style="color:#fca5a5;font-size:.82rem;min-height:16px;text-align:center"></div>
+      <div id="resetSuccess" style="display:none;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);border-radius:10px;padding:12px;color:#6ee7b7;font-size:.85rem;text-align:center">
+        ✅ 재설정 이메일을 보냈습니다. 확인해주세요.
+      </div>
+      <button id="btnReset" onclick="doResetPw()" class="auth-btn">재설정 메일 보내기</button>
+      <button onclick="hideResetForm()" class="auth-link">← 로그인으로 돌아가기</button>
+    </div>
+  </div>
+</div>
+<style>
+.auth-tab{flex:1;padding:9px;border:none;background:none;color:rgba(255,255,255,.6);font-size:.9rem;font-weight:600;border-radius:9px;cursor:pointer;font-family:inherit;transition:all .15s}
+.auth-tab-active{background:#fff;color:#1e40af}
+.auth-input{padding:13px 16px;border-radius:10px;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:.95rem;outline:none;font-family:inherit;transition:border-color .15s}
+.auth-input:focus{border-color:rgba(255,255,255,.6)}
+.auth-input::placeholder{color:rgba(255,255,255,.4)}
+.auth-btn{padding:14px;border-radius:10px;border:none;background:#fff;color:#1e40af;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.auth-btn:hover{opacity:.9}
+.auth-btn:disabled{opacity:.5;cursor:not-allowed}
+.auth-link{background:none;border:none;color:rgba(255,255,255,.6);font-size:.82rem;cursor:pointer;text-align:center;padding:4px;font-family:inherit}
+.auth-link:hover{color:rgba(255,255,255,.9)}
+</style>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="app-logo">🛡️ 보험 고객 관리</div>
+  <span id="syncBadge" style="font-size:.68rem;color:rgba(255,255,255,.5);white-space:nowrap;margin-right:4px">⏳</span>
+  <div class="header-actions">
+    <button class="icon-btn" onclick="exportExcel()" title="엑셀 내보내기">📊</button>
+    <button class="icon-btn" onclick="openBackupModal()" title="백업/복원">🔒</button>
+    <button class="icon-btn" onclick="window.print()" title="인쇄">🖨️</button>
+    <button id="logoutBtn" class="icon-btn" onclick="doLogout()" title="로그아웃" style="display:none">🚪</button>
+  </div>
+</header>
+
+<div class="main-scroll">
+
+  <!-- ALERT BAR -->
+  <div class="alert-bar" id="alertBar">
+    <span style="font-size:1rem">⚠️</span>
+    <span class="alert-bar-text">갱신 임박:</span>
+    <div id="alertItems" style="display:flex;flex-wrap:wrap"></div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-icon blue">👥</div><div><div class="stat-val" id="s-total">0</div><div class="stat-lbl">전체 고객</div></div></div>
+    <div class="stat-card"><div class="stat-icon green">📋</div><div><div class="stat-val" id="s-contracts">0</div><div class="stat-lbl">계약 건수</div></div></div>
+    <div class="stat-card"><div class="stat-icon yellow">🔔</div><div><div class="stat-val" id="s-renewal">0</div><div class="stat-lbl">30일 내 갱신</div></div></div>
+    <div class="stat-card"><div class="stat-icon red">💰</div><div><div class="stat-val" id="s-premium">0</div><div class="stat-lbl">월보험료(만원)</div></div></div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="search-box">🔍<input type="text" id="searchInput" placeholder="이름·연락처·상품명 검색" oninput="applyFilter()"></div>
+    <div class="view-toggle">
+      <button class="view-btn active" id="vbCard" onclick="setView('card')">☰</button>
+      <button class="view-btn" id="vbTable" onclick="setView('table')">⊞</button>
+    </div>
+  </div>
+
+  <!-- FILTER PILLS -->
+  <div class="filter-pills">
+    <div class="pill active" data-val="" onclick="setPill(this,'')">전체</div>
+    <div class="pill" data-val="유효" onclick="setPill(this,'유효')">✅ 유효</div>
+    <div class="pill" data-val="갱신임박" onclick="setPill(this,'갱신임박')">⚠️ 갱신임박</div>
+    <div class="pill" data-val="만기" onclick="setPill(this,'만기')">❌ 만기</div>
+  </div>
+
+  <!-- CARD LIST -->
+  <div class="card-list" id="cardList"></div>
+
+  <!-- TABLE VIEW (hidden by default on mobile, visible on desktop switch) -->
+  <div class="table-view" id="tableView">
+    <div class="table-wrap">
+      <table class="main-table">
+        <thead>
+          <tr>
+            <th onclick="sortBy('name')">이름 ↕</th>
+            <th>주민번호</th>
+            <th>연락처</th>
+            <th>직업</th>
+            <th>가족</th>
+            <th>보험 계약</th>
+            <th>차량번호</th>
+            <th>차량갱신</th>
+            <th>실손갱신</th>
+            <th>상태</th>
+            <th>메모</th>
+            <th>관리</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="emptyState" class="empty-state" style="display:none">
+    <div class="empty-icon">📋</div>
+    <div class="empty-text">등록된 고객이 없습니다</div>
+    <div class="empty-sub">아래 + 버튼으로 첫 고객을 등록하세요</div>
+  </div>
+
+  <div class="pagination" id="pagination" style="display:none">
+    <span class="page-count" id="pageInfo"></span>
+    <div style="display:flex;gap:4px" id="pageBtns"></div>
+  </div>
+
+</div><!-- end main-scroll -->
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar">
+  <button class="bottom-btn active" onclick="showTab('home')"><span class="bb-icon">🏠</span>홈</button>
+  <button class="bottom-btn" onclick="showTab('search')"><span class="bb-icon">🔍</span>검색</button>
+  <div style="width:56px"></div><!-- FAB placeholder -->
+  <button class="bottom-btn" onclick="showTab('alert')"><span class="bb-icon">🔔</span>알림</button>
+  <button class="bottom-btn" onclick="openBackupModal()"><span class="bb-icon">🔒</span>백업/복원</button>
+</div>
+<button class="fab" onclick="openAddModal()">＋</button>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">새 고객 등록</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="form-section">
+        <div class="form-section-title">👤 기본 정보</div>
+        <div class="form-grid">
+          <div class="form-group"><label>이름 *</label><input type="text" id="f-name" placeholder="홍길동" autocomplete="off"></div>
+          <div class="form-group"><label>연락처 *</label><input type="tel" id="f-phone" placeholder="010-0000-0000" oninput="formatPhone(this)" autocomplete="off"></div>
+          <div class="form-group"><label>생년월일</label><input type="date" id="f-birth"></div>
+          <div class="form-group"><label>직업</label><input type="text" id="f-job" placeholder="직업" autocomplete="off"></div>
+          <div class="form-group full"><label>주민번호</label>
+            <div class="ssn-row">
+              <input type="text" id="f-ssn1" placeholder="앞 6자리" maxlength="6" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')">
+              <div class="ssn-dash">—</div>
+              <input type="text" id="f-ssn2" placeholder="뒤 7자리" maxlength="7" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')">
+            </div>
+          </div>
+          <div class="form-group full"><label>주소</label><input type="text" id="f-address" placeholder="주소" autocomplete="off"></div>
+          <div class="form-group full"><label>이메일</label><input type="email" id="f-email" placeholder="email@example.com" autocomplete="off"></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">👨‍👩‍👧 가족관계</div>
+        <div class="dyn-block" id="familyBlock"></div>
+        <button class="add-row-btn" onclick="addFamilyRow()">＋ 가족 추가</button>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">📋 보험 계약 (여러 개 등록 가능)</div>
+        <div class="dyn-block" id="insBlock"></div>
+        <button class="add-row-btn" onclick="addInsRow()">＋ 보험 계약 추가</button>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">🚗 차량 & 실손</div>
+        <div class="form-grid-3">
+          <div class="form-group"><label>차량번호</label><input type="text" id="f-carPlate" placeholder="12가 3456" autocomplete="off"></div>
+          <div class="form-group"><label>차량 갱신일</label><input type="date" id="f-carRenewal"></div>
+          <div class="form-group"><label>실손 갱신일</label><input type="date" id="f-silseon"></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">💬 상담 메모</div>
+        <div class="memo-list" id="memoList"></div>
+        <div class="memo-add-row">
+          <textarea id="memoInput" placeholder="상담 내용, 특이사항..."></textarea>
+          <button class="btn btn-outline" onclick="addMemo()">메모 추가</button>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal()">취소</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveCustomer()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- BACKUP/RESTORE MODAL -->
+<div class="modal-overlay" id="backupModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">🔒 백업 &amp; 복원</div>
+      <button class="modal-close" onclick="closeBackupModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- 탭 -->
+      <div style="display:flex;gap:4px;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:18px">
+        <button id="tabExport" class="btab btab-active" onclick="setBackupTab('export')">📤 백업 코드 만들기</button>
+        <button id="tabImport" class="btab" onclick="setBackupTab('import')">📥 코드로 복원하기</button>
+      </div>
+
+      <!-- 백업 패널 -->
+      <div id="exportPanel">
+        <div style="background:var(--primary-bg);border-radius:10px;padding:14px;margin-bottom:14px">
+          <div style="font-size:.8rem;font-weight:700;color:var(--primary);margin-bottom:6px">📱 폰을 바꿀 때 이렇게 하세요</div>
+          <div style="font-size:.78rem;color:var(--muted);line-height:1.7">
+            1. 아래 백업 코드를 <b>복사</b>하세요<br>
+            2. 카카오톡 <b>나에게 보내기</b>로 전송<br>
+            3. 새 폰에서 앱 열고 <b>코드로 복원하기</b> 탭<br>
+            4. 코드 붙여넣기 → 복원 완료!
+          </div>
+        </div>
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+          <span>백업 코드</span>
+          <span id="backupInfo" style="color:var(--subtle)"></span>
+        </div>
+        <div class="backup-code-box" id="backupCodeBox" onclick="this.focus();document.execCommand('selectAll')"></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+          <button class="backup-action-btn" onclick="copyBackupCode()" style="background:var(--primary);color:#fff">
+            📋 백업 코드 복사
+          </button>
+          <button class="backup-action-btn" onclick="shareBackupCode()" style="background:#25D366;color:#fff">
+            📤 카카오톡/문자로 공유
+          </button>
+          <button class="backup-action-btn" onclick="exportExcel()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border)">
+            📊 엑셀 파일로도 내보내기
+          </button>
+        </div>
+        <div style="margin-top:14px;padding:10px 12px;background:#fef9c3;border-radius:8px;border:1px solid #fde68a">
+          <div style="font-size:.75rem;color:#92400e;font-weight:600">⚠️ 주의사항</div>
+          <div style="font-size:.73rem;color:#78350f;margin-top:3px;line-height:1.6">
+            백업 코드에는 모든 고객 정보가 포함됩니다.<br>
+            반드시 본인만 볼 수 있는 곳에 보관하세요.
+          </div>
+        </div>
+      </div>
+
+      <!-- 복원 패널 -->
+      <div id="importPanel" style="display:none">
+        <div style="background:var(--primary-bg);border-radius:10px;padding:14px;margin-bottom:14px">
+          <div style="font-size:.8rem;font-weight:700;color:var(--primary);margin-bottom:4px">📥 복원 방법</div>
+          <div style="font-size:.78rem;color:var(--muted);line-height:1.7">
+            카카오톡 등에서 저장해둔 백업 코드를<br>아래 입력창에 붙여넣고 복원 버튼을 누르세요.
+          </div>
+        </div>
+        <label style="font-size:.75rem;font-weight:600;color:var(--muted);display:block;margin-bottom:6px">백업 코드 붙여넣기</label>
+        <textarea class="restore-input" id="restoreInput" placeholder="INS1:eyJ...로 시작하는 코드를 붙여넣으세요"></textarea>
+        <div id="restoreResult" style="font-size:.82rem;min-height:20px;margin-top:8px;text-align:center;font-weight:600"></div>
+        <button class="backup-action-btn" onclick="doRestore()" style="background:var(--primary);color:#fff;margin-top:10px">
+          📥 이 코드로 데이터 복원하기
+        </button>
+        <div style="margin-top:12px;padding:10px 12px;background:#fee2e2;border-radius:8px;border:1px solid #fecaca">
+          <div style="font-size:.75rem;color:#991b1b;font-weight:600">⚠️ 주의</div>
+          <div style="font-size:.73rem;color:#7f1d1d;margin-top:3px;line-height:1.6">
+            복원하면 현재 기기의 데이터가 교체됩니다.<br>
+            복원 전에 현재 기기 백업 코드를 먼저 저장해두세요.
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-full" onclick="closeBackupModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  ⚙️  Supabase 설정 — 발급 후 아래 두 줄만 바꾸세요
+// ══════════════════════════════════════════════════════════════
+const SUPABASE_URL      = 'https://cqzaubldothptphbkech.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxemF1Ymxkb3RocHRwaGJrZWNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0OTk2MzgsImV4cCI6MjA4NzA3NTYzOH0.uUa9h9HoESZnxTLP70I33_AVGuu7gk5Ca3hpSSrNzHw';
+// ══════════════════════════════════════════════════════════════
+const SB_ON = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
+
+// ── 데이터 ───────────────────────────────────────────────────
+let customers = [];
+let _session  = null;   // { access_token, user }
+let editingId=null, currentMemos=[], currentFamily=[], currentIns=[];
+let filteredData=[], sortKey='', sortAsc=true, currentPage=1, filterStatus='';
+let currentView = 'card';
+const PAGE = 20;
+const LS_KEY = 'ins_crm_v4';
+const LS_SES = 'ins_sb_session';
+
+// ── 유틸 ─────────────────────────────────────────────────────
+function v(x){ return x || ''; }   // ← 엑셀 v() 버그 수정
+
+// ── Supabase REST ─────────────────────────────────────────────
+async function sbFetch(path, opt={}){
+  const hdrs = {
+    'Content-Type':'application/json',
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization':'Bearer '+(_session?_session.access_token:SUPABASE_ANON_KEY),
+    ...opt.headers
+  };
+  const res = await fetch(SUPABASE_URL+path, {...opt, headers:hdrs});
+  const txt = await res.text();
+  const json = txt ? JSON.parse(txt) : {};
+  if(!res.ok) throw new Error(json.error_description||json.message||JSON.stringify(json));
+  return json;
+}
+async function sbSignIn(email,pw){
+  return sbFetch('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password:pw})});
+}
+async function sbSignUp(email,pw){
+  return sbFetch('/auth/v1/signup',{method:'POST',body:JSON.stringify({email,password:pw})});
+}
+async function sbSignOut(){
+  try{ await sbFetch('/auth/v1/logout',{method:'POST'}); }catch(e){}
+  _session=null; localStorage.removeItem(LS_SES);
+}
+async function sbResetPw(email){
+  return sbFetch('/auth/v1/recover',{method:'POST',body:JSON.stringify({email})});
+}
+async function sbLoad(){
+  const uid=_session.user.id;
+  const rows=await sbFetch(`/rest/v1/customers?user_id=eq.${uid}&select=data`,{headers:{'Accept':'application/json'}});
+  return (rows&&rows.length&&rows[0].data) ? rows[0].data : null;
+}
+async function sbSave(arr){
+  const uid=_session.user.id;
+  await sbFetch('/rest/v1/customers',{
+    method:'POST',
+    body:JSON.stringify({user_id:uid,data:arr,updated_at:new Date().toISOString()}),
+    headers:{'Prefer':'resolution=merge-duplicates,return=minimal'}
+  });
+}
+
+// ── 저장 ─────────────────────────────────────────────────────
+function save(){
+  // 로컬 항상 저장 (오프라인 대비)
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(customers)); }catch(e){}
+  // Supabase 연동 시 클라우드도 저장
+  if(SB_ON && _session){
+    sbSave(customers)
+      .then(()=>updateSyncBadge('cloud'))
+      .catch(()=>updateSyncBadge('error'));
+  } else {
+    updateSyncBadge('local');
+  }
+}
+function loadLocal(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(raw){const p=JSON.parse(raw);if(Array.isArray(p)&&p.length)return p;}
+  }catch(e){}
+  return null;
+}
+function updateSyncBadge(mode){
+  const b=document.getElementById('syncBadge'); if(!b)return;
+  const n=customers.length;
+  if(mode==='cloud'){b.textContent=`☁️ ${n}명 저장됨`;b.style.color='rgba(255,255,255,.85)';}
+  else if(mode==='error'){b.textContent='⚠️ 저장 실패';b.style.color='#fca5a5';}
+  else {b.textContent=`💾 ${n}명 저장됨`;b.style.color='rgba(255,255,255,.6)';}
+}
+
+// ── 인증 화면 표시/숨김 ───────────────────────────────────────
+function showAuthScreen(show){
+  const el=document.getElementById('authScreen');
+  if(el) el.style.display=show?'flex':'none';
+  const ms=document.querySelector('.main-scroll');
+  if(ms) ms.style.visibility=show?'hidden':'visible';
+  const hd=document.querySelector('.app-header');
+  if(hd) hd.style.display=show?'none':'flex';
+  const bb=document.querySelector('.bottom-bar');
+  if(bb) bb.style.display=show?'none':'flex';
+  const fab=document.querySelector('.fab');
+  if(fab) fab.style.display=show?'none':'flex';
+}
+function showLoadingScreen(show,msg){
+  const el=document.getElementById('loadingScreen');if(!el)return;
+  el.style.display=show?'flex':'none';
+  const ms=document.querySelector('.main-scroll');if(ms)ms.style.visibility=show?'hidden':'visible';
+  if(msg){const t=el.querySelector('.ld-msg');if(t)t.textContent=msg;}
+}
+
+// ── 인증 UI ───────────────────────────────────────────────────
+function setAuthTab(tab){
+  document.getElementById('tabLogin').classList.toggle('auth-tab-active',tab==='login');
+  document.getElementById('tabSignup').classList.toggle('auth-tab-active',tab==='signup');
+  document.getElementById('loginForm').style.display=tab==='login'?'flex':'none';
+  document.getElementById('signupForm').style.display=tab==='signup'?'flex':'none';
+  document.getElementById('resetForm').style.display='none';
+}
+function showResetForm(){
+  document.getElementById('loginForm').style.display='none';
+  document.getElementById('resetForm').style.display='flex';
+}
+function hideResetForm(){ setAuthTab('login'); }
+
+async function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const pw=document.getElementById('loginPw').value;
+  const err=document.getElementById('loginErr');
+  err.textContent='';
+  if(!email||!pw){err.textContent='이메일과 비밀번호를 입력하세요.';return;}
+  const btn=document.getElementById('btnLogin');
+  btn.textContent='로그인 중...';btn.disabled=true;
+  try{
+    const res=await sbSignIn(email,pw);
+    _session={access_token:res.access_token,user:res.user};
+    localStorage.setItem(LS_SES,JSON.stringify(_session));
+    await afterLogin();
+  }catch(e){
+    err.textContent=e.message.includes('Invalid')?'이메일 또는 비밀번호가 틀렸습니다.':e.message;
+  }finally{btn.textContent='로그인';btn.disabled=false;}
+}
+async function doSignup(){
+  const email=document.getElementById('signupEmail').value.trim();
+  const pw=document.getElementById('signupPw').value;
+  const pw2=document.getElementById('signupPw2').value;
+  const err=document.getElementById('signupErr');
+  err.textContent='';
+  if(!email||!pw){err.textContent='이메일과 비밀번호를 입력하세요.';return;}
+  if(pw.length<6){err.textContent='비밀번호는 6자 이상이어야 합니다.';return;}
+  if(pw!==pw2){err.textContent='비밀번호가 일치하지 않습니다.';return;}
+  const btn=document.getElementById('btnSignup');
+  btn.textContent='가입 중...';btn.disabled=true;
+  try{
+    const res=await sbSignUp(email,pw);
+    if(res.access_token){
+      _session={access_token:res.access_token,user:res.user};
+      localStorage.setItem(LS_SES,JSON.stringify(_session));
+      await afterLogin();
+    } else {
+      document.getElementById('signupSuccess').style.display='block';
+    }
+  }catch(e){
+    err.textContent=e.message.includes('already')?'이미 가입된 이메일입니다.':e.message;
+  }finally{btn.textContent='회원가입';btn.disabled=false;}
+}
+async function doResetPw(){
+  const email=document.getElementById('resetEmail').value.trim();
+  const err=document.getElementById('resetErr');
+  err.textContent='';
+  if(!email){err.textContent='이메일을 입력하세요.';return;}
+  const btn=document.getElementById('btnReset');
+  btn.textContent='전송 중...';btn.disabled=true;
+  try{
+    await sbResetPw(email);
+    document.getElementById('resetSuccess').style.display='block';
+  }catch(e){err.textContent=e.message;}
+  finally{btn.textContent='재설정 메일 보내기';btn.disabled=false;}
+}
+async function doLogout(){
+  if(!confirm('로그아웃 하시겠습니까?'))return;
+  await sbSignOut();
+  customers=[];
+  showAuthScreen(true);
+  document.getElementById('logoutBtn').style.display='none';
+  updateSyncBadge('local');
+  showToast('로그아웃되었습니다','warning');
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+async function init(){
+  // 무조건 로그인 화면 먼저 표시
+  showLoadingScreen(false);
+  showAuthScreen(true);
+}
+
+async function afterLogin(){
+  showLoadingScreen(true,'데이터를 불러오는 중...');
+  showAuthScreen(false);
+  try{
+    const cloud=await sbLoad();
+    if(cloud&&cloud.length>0){
+      customers=cloud;
+      localStorage.setItem(LS_KEY,JSON.stringify(customers));
+    } else {
+      const local=loadLocal();
+      if(local&&local.length>0){ customers=local; await sbSave(customers); }
+      else { loadSampleData(); await sbSave(customers); }
+    }
+    showLoadingScreen(false);
+    const lb=document.getElementById('logoutBtn');
+    if(lb) lb.style.display='flex';
+    const sb=document.getElementById('syncBadge');
+    if(sb&&_session) sb.title=_session.user.email;
+    updateSyncBadge('cloud');
+    applyFilter();updateStats();updateAlertBar();
+  }catch(e){
+    console.error('afterLogin error:',e);
+    _session=null; localStorage.removeItem(LS_SES);
+    showLoadingScreen(false);
+    showAuthScreen(true);
+    showToast('로그인이 필요합니다','warning');
+  }
+}
+
+// ── 백업 코드 생성 ────────────────────────────────────────────
+// 형식: base64(gzip-like) 로 인코딩, 앞에 "INS1:" prefix 붙임
+function makeBackupCode(){
+  const json = JSON.stringify(customers);
+  // btoa는 ASCII만 지원 → UTF-8 → 퍼센트인코딩 → btoa
+  const b64 = btoa(unescape(encodeURIComponent(json)));
+  return 'INS1:' + b64;
+}
+function parseBackupCode(code){
+  const trimmed = code.trim();
+  if(!trimmed.startsWith('INS1:')) throw new Error('올바른 백업 코드가 아닙니다.');
+  const b64 = trimmed.slice(5);
+  const json = decodeURIComponent(escape(atob(b64)));
+  const arr = JSON.parse(json);
+  if(!Array.isArray(arr)) throw new Error('데이터 형식이 올바르지 않습니다.');
+  return arr;
+}
+
+// ── 백업 모달 UI ──────────────────────────────────────────────
+function openBackupModal(){
+  document.getElementById('backupModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  refreshBackupCode();
+}
+function closeBackupModal(){
+  document.getElementById('backupModal').classList.remove('open');
+  document.body.style.overflow = '';
+  // 복원 탭 초기화
+  document.getElementById('restoreInput').value = '';
+  document.getElementById('restoreResult').textContent = '';
+  setBackupTab('export');
+}
+function setBackupTab(tab){
+  document.getElementById('tabExport').classList.toggle('btab-active', tab==='export');
+  document.getElementById('tabImport').classList.toggle('btab-active', tab==='import');
+  document.getElementById('exportPanel').style.display = tab==='export'?'block':'none';
+  document.getElementById('importPanel').style.display = tab==='import'?'block':'none';
+}
+function refreshBackupCode(){
+  const code = makeBackupCode();
+  const el = document.getElementById('backupCodeBox');
+  if(el) el.textContent = code;
+  const info = document.getElementById('backupInfo');
+  if(info){
+    const d = new Date().toLocaleString('ko-KR');
+    info.textContent = `고객 ${customers.length}명 · ${d} 기준`;
+  }
+}
+function copyBackupCode(){
+  const code = makeBackupCode();
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(code).then(()=>showToast('백업 코드가 복사되었습니다 📋','success'));
+  } else {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = code; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('백업 코드가 복사되었습니다 📋','success');
+  }
+}
+function shareBackupCode(){
+  const code = makeBackupCode();
+  const text = `[보험 고객 관리 백업]
+고객 ${customers.length}명
+
+${code}
+
+※ 새 기기에서 앱 열고 백업/복원 → 코드 붙여넣기`;
+  if(navigator.share){
+    navigator.share({title:'보험 고객 관리 백업', text}).catch(()=>{});
+  } else {
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(text).then(()=>showToast('공유 텍스트가 복사되었습니다','success'));
+    }
+  }
+}
+function doRestore(){
+  const code = document.getElementById('restoreInput').value.trim();
+  const resEl = document.getElementById('restoreResult');
+  resEl.textContent=''; resEl.style.color='';
+  if(!code){ resEl.textContent='백업 코드를 붙여넣어 주세요.'; resEl.style.color='#ef4444'; return; }
+  try{
+    const arr = parseBackupCode(code);
+    // 기존 데이터와 병합 여부 확인
+    const msg = customers.length > 0
+      ? `현재 ${customers.length}명의 데이터가 있습니다.
+백업 데이터(${arr.length}명)로 교체할까요?
+
+[확인] 교체  [취소] 취소`
+      : null;
+    if(msg && !confirm(msg)) return;
+    customers = arr;
+    save();
+    applyFilter(); updateStats(); updateAlertBar();
+    resEl.textContent = `✅ ${arr.length}명의 데이터가 복원되었습니다!`;
+    resEl.style.color = '#10b981';
+    showToast(`${arr.length}명 복원 완료!`, 'success');
+    setTimeout(()=>closeBackupModal(), 1500);
+  }catch(e){
+    resEl.textContent = '❌ ' + e.message;
+    resEl.style.color = '#ef4444';
+  }
+}
+
+function showLoadingScreen(show){
+  const el=document.getElementById('loadingScreen'); if(!el)return;
+  el.style.display=show?'flex':'none';
+  const ms=document.querySelector('.main-scroll'); if(ms)ms.style.visibility=show?'hidden':'visible';
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+function init(){
+  const saved = loadLocal();
+  if(saved){ customers = saved; }
+  else { loadSampleData(); save(); }
+  showLoadingScreen(false);
+  applyFilter(); updateStats(); updateAlertBar(); updateSyncBadge();
+}
+function loadSampleData(){
+  const d = n => new Date(Date.now()+n*86400000).toISOString().slice(0,10);
+  customers = [
+    {id:1001,name:'김철수(샘플)',phone:'010-1234-5678',birth:'1980-05-15',
+     ssn1:'800515',ssn2:'1234567',job:'회사원',address:'서울시 강남구 테헤란로 123',email:'kim@email.com',
+     family:[{name:'김영숙',rel:'배우자',age:'45',phone:'010-2222-3333'},{name:'김민준',rel:'자녀',age:'18',phone:'010-4444-5555'}],
+     contracts:[
+       {company:'삼성생명',product:'종신보험',startDate:'2020-01-01',expiry:'2040-01-01',premium:180000,payment:'자동이체',payStatus:'정상'},
+       {company:'현대해상',product:'운전자보험',startDate:'2021-06-01',expiry:d(22),premium:35000,payment:'자동이체',payStatus:'정상'}
+     ],
+     carPlate:'12가 3456',carRenewal:d(18),silseon:d(50),
+     memos:[{date:'2024-01-15',text:'👋 샘플입니다. 삭제 후 실제 고객을 등록하세요!'}],
+     createdAt:new Date().toISOString()},
+    {id:1002,name:'이영희(샘플)',phone:'010-9876-5432',birth:'1975-11-20',
+     ssn1:'751120',ssn2:'2345678',job:'자영업',address:'부산시 해운대구 달맞이길 456',email:'',
+     family:[{name:'이준혁',rel:'남편',age:'52',phone:'010-6666-7777'}],
+     contracts:[
+       {company:'흥국생명',product:'실손보험',startDate:'2019-06-01',expiry:d(7),premium:95000,payment:'카드',payStatus:'정상'},
+       {company:'KB손해보험',product:'암보험',startDate:'2022-03-01',expiry:'2042-03-01',premium:62000,payment:'자동이체',payStatus:'정상'}
+     ],
+     carPlate:'34나 7890',carRenewal:'2025-08-15',silseon:d(7),
+     memos:[{date:'2024-03-20',text:'실손 갱신 안내 완료'}],
+     createdAt:new Date().toISOString()}
+  ];
+}
+
+// ── STATUS ────────────────────────────────────────────────────────────────────
+function contractStatus(expiry){
+  if(!expiry)return'유효';
+  const d=Math.ceil((new Date(expiry)-Date.now())/86400000);
+  if(d<0)return'만기';if(d<=30)return'갱신임박';return'유효';
+}
+function overallStatus(c){
+  const ss=(c.contracts||[]).map(i=>contractStatus(i.expiry));
+  if(ss.includes('만기'))return'만기';if(ss.includes('갱신임박'))return'갱신임박';return'유효';
+}
+function isAlert(dt){if(!dt)return false;const d=Math.ceil((new Date(dt)-Date.now())/86400000);return d>=0&&d<=30;}
+function daysLeft(dt){if(!dt)return null;return Math.ceil((new Date(dt)-Date.now())/86400000);}
+
+// ── FILTER ────────────────────────────────────────────────────────────────────
+function applyFilter(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  filteredData=customers.filter(c=>{
+    const prods=(c.contracts||[]).map(i=>i.product+' '+i.company).join(' ');
+    const fam=(c.family||[]).map(f=>f.name).join(' ');
+    const matchQ=!q||[c.name,c.phone,c.job,c.address,prods,fam].some(v=>(v||'').toLowerCase().includes(q));
+    const matchSt=!filterStatus||overallStatus(c)===filterStatus;
+    return matchQ&&matchSt;
+  });
+  if(sortKey)filteredData.sort((a,b)=>sortAsc?(a[sortKey]||'').localeCompare(b[sortKey]||''):(b[sortKey]||'').localeCompare(a[sortKey]||''));
+  currentPage=1;
+  renderAll();
+}
+function sortBy(k){sortKey===k?sortAsc=!sortAsc:(sortKey=k,sortAsc=true);applyFilter();}
+function setPill(el,val){
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');filterStatus=val;applyFilter();
+}
+function setView(v){
+  currentView=v;
+  document.getElementById('vbCard').classList.toggle('active',v==='card');
+  document.getElementById('vbTable').classList.toggle('active',v==='table');
+  document.getElementById('cardList').style.display=v==='card'?'flex':'none';
+  document.getElementById('tableView').style.display=v==='table'?'block':'none';
+  renderAll();
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function renderAll(){
+  const total=filteredData.length;
+  const empty=document.getElementById('emptyState');
+  empty.style.display=total?'none':'block';
+  document.getElementById('pagination').style.display=total>PAGE?'flex':'none';
+  const pageData=filteredData.slice((currentPage-1)*PAGE,currentPage*PAGE);
+  if(currentView==='card')renderCards(pageData);
+  else renderTable(pageData);
+  renderPagination(total);
+}
+
+// CARD
+function renderCards(data){
+  const list=document.getElementById('cardList');
+  list.innerHTML='';
+  data.forEach(c=>{
+    const st=overallStatus(c);
+    const bc=st==='유효'?'badge-active':st==='갱신임박'?'badge-renewal':'badge-expired';
+    const ini=c.name.charAt(0);
+    const totalPrem=(c.contracts||[]).reduce((s,i)=>s+(Number(i.premium)||0),0);
+    const carAl=isAlert(c.carRenewal),silAl=isAlert(c.silseon);
+
+    // family
+    const famHtml=(c.family||[]).length?`<div class="fam-pills">${(c.family||[]).map(f=>`
+      <div class="fam-pill">
+        <span class="fam-name">${f.name}</span><span class="fam-rel">${f.rel}</span>
+        <span class="fam-info">${f.age}세 · ${f.phone?`<a class="tel-link" href="tel:${f.phone.replace(/\D/g,'')}" onclick="event.stopPropagation()">${f.phone}</a>`:'-'}</span>
+      </div>`).join('')}</div>`:'<span style="font-size:.78rem;color:var(--subtle)">등록된 가족 없음</span>';
+
+    // insurance
+    const insHtml=(c.contracts||[]).length?`<div class="ins-list">${(c.contracts||[]).map(ins=>{
+      const ist=contractStatus(ins.expiry);const al=ist!=='유효';
+      const dl=daysLeft(ins.expiry);
+      const dlStr=dl!==null?(dl<0?'만기':'D-'+dl):'';
+      return`<div class="ins-row${al?' alert-ins':''}">
+        <div class="ins-info">
+          <div class="ins-name">${ins.company} · ${ins.product}${al?'<span class="alert-dot"></span>':''}</div>
+          <div class="ins-detail">${ins.startDate||'-'} ~ ${ins.expiry||'-'}${dlStr?' <b style=color:var(--danger)>('+dlStr+')</b>':''} · ${ins.payment}</div>
+        </div>
+        <div class="ins-price">${ins.premium?Number(ins.premium).toLocaleString()+'원':'-'}</div>
+      </div>`;
+    }).join('')}${totalPrem?`<div class="ins-total">합계: ${totalPrem.toLocaleString()}원 / 월</div>`:''}</div>`
+    :'<span style="font-size:.78rem;color:var(--subtle)">계약 없음</span>';
+
+    // car/silseon chips
+    const chips=[];
+    if(c.carPlate){chips.push(`<div class="info-chip${carAl?' alert-chip-red':''}"><span class="chip-label">차량</span><span class="chip-val">${c.carPlate}${carAl?'<span class="alert-dot"></span>':''}</span></div>`);}
+    if(c.carRenewal){chips.push(`<div class="info-chip${carAl?' alert-chip-red':''}"><span class="chip-label">차량갱신</span><span class="chip-val">${c.carRenewal}</span></div>`);}
+    if(c.silseon){chips.push(`<div class="info-chip${silAl?' alert-chip-red':''}"><span class="chip-label">실손갱신</span><span class="chip-val">${c.silseon}${silAl?'<span class="alert-dot"></span>':''}</span></div>`);}
+
+    const card=document.createElement('div');
+    card.className='customer-card';
+    card.innerHTML=`
+      <div class="card-top">
+        <div class="card-avatar">${ini}</div>
+        <div class="card-main">
+          <div class="card-name-row">
+            <span class="card-name">${c.name}</span>
+            <span class="badge ${bc}">${st}</span>
+          </div>
+          <div class="card-phone">${c.phone?`<a class="tel-link" href="tel:${c.phone.replace(/\D/g,'')}" onclick="event.stopPropagation()">📞 ${c.phone}</a>`:'-'}${c.job?' · '+c.job:''}</div>
+          ${c.address?`<div class="card-job" style="margin-top:2px">${c.address}</div>`:''}
+        </div>
+      </div>
+      ${(c.family||[]).length?`<div class="card-divider"></div>
+      <div class="card-section">
+        <div class="card-section-title">👨‍👩‍👧 가족관계</div>
+        ${famHtml}
+      </div>`:''}
+      <div class="card-divider"></div>
+      <div class="card-section">
+        <div class="card-section-title">📋 보험 계약</div>
+        ${insHtml}
+      </div>
+      ${chips.length?`<div class="card-divider"></div>
+      <div class="card-section">
+        <div class="card-section-title">🚗 차량 & 실손</div>
+        <div class="info-row">${chips.join('')}</div>
+      </div>`:''}
+      ${(c.memos||[]).length?`<div class="card-divider"></div>
+      <div class="card-section">
+        <div class="card-section-title">💬 최근 메모</div>
+        <div style="font-size:.82rem;color:var(--muted);background:var(--surface2);border-radius:8px;padding:8px 10px;border-left:3px solid var(--primary-light)">${(c.memos[0]||{}).text||''}</div>
+        ${c.memos.length>1?`<div style="font-size:.72rem;color:var(--subtle);margin-top:4px">외 ${c.memos.length-1}개</div>`:''}
+      </div>`:''}
+      <div class="card-actions">
+        <button class="btn btn-outline btn-sm" style="flex:1" onclick="event.stopPropagation();openEdit(${c.id})">✏️ 수정</button>
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCustomer(${c.id})">🗑️</button>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+// TABLE
+function renderTable(data){
+  const tb=document.getElementById('tableBody');tb.innerHTML='';
+  data.forEach(c=>{
+    const st=overallStatus(c);const bc=st==='유효'?'badge-active':st==='갱신임박'?'badge-renewal':'badge-expired';
+    const famH=(c.family||[]).map(f=>`<span class="badge badge-fam">${f.name}(${f.rel})</span>`).join(' ');
+    const insH=(c.contracts||[]).length?`<div class="ins-mini">${(c.contracts||[]).map(ins=>{
+      const al=contractStatus(ins.expiry)!=='유효';
+      return`<div class="ins-mini-row${al?' alert':''}"><span class="co">${ins.company}</span>·${ins.product}·${ins.expiry||'-'}·${ins.premium?Number(ins.premium).toLocaleString()+'원':''}${al?'<span class="alert-dot"></span>':''}</div>`;
+    }).join('')}<div class="ins-total-t">합계 ${(c.contracts||[]).reduce((s,i)=>s+(Number(i.premium)||0),0).toLocaleString()}원/월</div></div>`:'<span style="color:var(--subtle);font-size:.75rem">-</span>';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td style="font-weight:700">${c.name}</td>
+      <td style="font-family:monospace;font-size:.78rem;color:var(--muted)">${c.ssn1?c.ssn1+'-●●●●●●●':'-'}</td>
+      <td style="font-size:.8rem;white-space:nowrap">${c.phone?`<a class="tel-link" href="tel:${c.phone.replace(/\D/g,'')}" onclick="event.stopPropagation()">📞 ${c.phone}</a>`:'-'}</td>
+      <td>${c.job||'-'}</td>
+      <td>${famH||'-'}</td>
+      <td style="max-width:280px">${insH}</td>
+      <td style="font-size:.8rem">${c.carPlate||'-'}${isAlert(c.carRenewal)?'<span class="alert-dot"></span>':''}</td>
+      <td style="font-size:.79rem;white-space:nowrap">${c.carRenewal||'-'}</td>
+      <td style="font-size:.79rem;white-space:nowrap">${c.silseon||'-'}${isAlert(c.silseon)?'<span class="alert-dot"></span>':''}</td>
+      <td><span class="badge ${bc}">${st}</span></td>
+      <td style="color:var(--muted);font-size:.79rem">${(c.memos||[]).length?'💬'+(c.memos||[]).length:'-'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openEdit(${c.id})">✏️</button>
+        <button class="btn btn-danger btn-sm" style="margin-left:3px" onclick="event.stopPropagation();deleteCustomer(${c.id})">🗑️</button>
+      </td>`;
+    tr.onclick=()=>openEdit(c.id);
+    tb.appendChild(tr);
+  });
+}
+
+function renderPagination(total){
+  const tp=Math.ceil(total/PAGE);
+  document.getElementById('pageInfo').textContent=`총 ${total}명`;
+  const b=document.getElementById('pageBtns');b.innerHTML='';
+  for(let i=1;i<=Math.min(tp,8);i++){
+    const btn=document.createElement('button');
+    btn.className='page-btn'+(i===currentPage?' active':'');
+    btn.textContent=i;btn.onclick=()=>{currentPage=i;renderAll();};
+    b.appendChild(btn);
+  }
+}
+
+function updateStats(){
+  document.getElementById('s-total').textContent=customers.length;
+  document.getElementById('s-contracts').textContent=customers.reduce((s,c)=>s+(c.contracts||[]).length,0);
+  document.getElementById('s-renewal').textContent=customers.filter(c=>overallStatus(c)==='갱신임박').length;
+  const tot=customers.reduce((s,c)=>s+(c.contracts||[]).reduce((ss,i)=>ss+(Number(i.premium)||0),0),0);
+  document.getElementById('s-premium').textContent=(tot/10000).toFixed(1);
+}
+
+function updateAlertBar(){
+  const bar=document.getElementById('alertBar');
+  const al=customers.filter(c=>overallStatus(c)!=='유효'||isAlert(c.carRenewal)||isAlert(c.silseon));
+  if(!al.length){bar.classList.remove('show');return;}
+  bar.classList.add('show');
+  document.getElementById('alertItems').innerHTML=al.map(c=>`<span class="alert-chip">${c.name}</span>`).join('');
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openAddModal(){
+  editingId=null;currentMemos=[];currentFamily=[];currentIns=[];
+  document.getElementById('modalTitle').textContent='새 고객 등록';
+  clearForm();renderFamilyBlock();renderInsBlock();renderMemoList();
+  document.getElementById('addModal').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function openEdit(id){
+  const c=customers.find(x=>x.id===id);if(!c)return;
+  editingId=id;
+  currentMemos=JSON.parse(JSON.stringify(c.memos||[]));
+  currentFamily=JSON.parse(JSON.stringify(c.family||[]));
+  currentIns=JSON.parse(JSON.stringify(c.contracts||[]));
+  document.getElementById('modalTitle').textContent=`✏️ ${c.name} 수정`;
+  fillForm(c);renderFamilyBlock();renderInsBlock();renderMemoList();
+  document.getElementById('addModal').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(){
+  document.getElementById('addModal').classList.remove('open');
+  document.body.style.overflow='';
+}
+function clearForm(){
+  ['name','phone','birth','ssn1','ssn2','job','address','email','carPlate','carRenewal','silseon','memoInput']
+    .forEach(f=>{const el=document.getElementById('f-'+f);if(el)el.value='';});
+}
+function fillForm(c){
+  const s=(id,v)=>{const el=document.getElementById('f-'+id);if(el)el.value=v||'';};
+  s('name',c.name);s('phone',c.phone);s('birth',c.birth);
+  s('ssn1',c.ssn1);s('ssn2',c.ssn2);s('job',c.job);
+  s('address',c.address);s('email',c.email);
+  s('carPlate',c.carPlate);s('carRenewal',c.carRenewal);s('silseon',c.silseon);
+}
+function saveCustomer(){
+  const g=id=>(document.getElementById('f-'+id)||{}).value||'';
+  const data={name:g('name'),phone:g('phone'),birth:g('birth'),ssn1:g('ssn1'),ssn2:g('ssn2'),job:g('job'),address:g('address'),email:g('email'),carPlate:g('carPlate'),carRenewal:g('carRenewal'),silseon:g('silseon'),family:collectFamily(),contracts:collectIns(),memos:currentMemos};
+  if(!data.name.trim()){showToast('이름을 입력해주세요','warning');return;}
+  if(editingId){
+    const i=customers.findIndex(c=>c.id===editingId);customers[i]={...customers[i],...data};
+    showToast(`${data.name} 수정 완료`,'success');
+  }else{
+    customers.push({...data,id:Date.now(),createdAt:new Date().toISOString()});
+    showToast(`${data.name} 등록 완료`,'success');
+  }
+  save();closeModal();applyFilter();updateAlertBar();updateStats();
+}
+function deleteCustomer(id){
+  const c=customers.find(x=>x.id===id);
+  if(!confirm(`${c.name} 고객을 삭제하시겠습니까?`))return;
+  customers=customers.filter(x=>x.id!==id);
+  save();applyFilter();updateAlertBar();updateStats();
+  showToast('삭제되었습니다','warning');
+}
+
+// ── FAMILY (card style) ───────────────────────────────────────────────────────
+const RELS=['배우자','남편','아내','자녀','아들','딸','아버지','어머니','형','오빠','언니','누나','동생','기타'];
+function addFamilyRow(){currentFamily.push({name:'',rel:'배우자',age:'',phone:''});renderFamilyBlock();}
+function delFamilyRow(i){currentFamily.splice(i,1);renderFamilyBlock();}
+function collectFamily(){
+  return currentFamily.map((_,i)=>({
+    name:(document.getElementById(`fn-${i}`)||{}).value||'',
+    rel:(document.getElementById(`fr-${i}`)||{}).value||'',
+    age:(document.getElementById(`fa-${i}`)||{}).value||'',
+    phone:(document.getElementById(`fp-${i}`)||{}).value||''
+  })).filter(f=>f.name);
+}
+function renderFamilyBlock(){
+  const b=document.getElementById('familyBlock');
+  if(!currentFamily.length){b.innerHTML='<div style="text-align:center;padding:12px;color:var(--subtle);font-size:.8rem;border:1.5px dashed var(--border);border-radius:9px">가족을 추가하세요</div>';return;}
+  b.innerHTML=currentFamily.map((f,i)=>`
+    <div class="dyn-row">
+      <button class="del-row-btn" onclick="delFamilyRow(${i})">✕</button>
+      <div class="dyn-row-grid" style="padding-right:32px">
+        <div class="form-group"><label>이름</label><input id="fn-${i}" type="text" value="${f.name}" placeholder="홍길동" autocomplete="off"></div>
+        <div class="form-group"><label>관계</label><select id="fr-${i}">${RELS.map(r=>`<option${f.rel===r?' selected':''}>${r}</option>`).join('')}</select></div>
+        <div class="form-group"><label>나이</label><input id="fa-${i}" type="number" value="${f.age}" placeholder="나이" inputmode="numeric" min="0" max="120"></div>
+        <div class="form-group"><label>전화번호</label><input id="fp-${i}" type="tel" value="${f.phone}" placeholder="010-0000-0000"></div>
+      </div>
+    </div>`).join('');
+}
+
+// ── INSURANCE (card style) ────────────────────────────────────────────────────
+function addInsRow(){currentIns.push({company:'',product:'',startDate:'',expiry:'',premium:'',payment:'자동이체',payStatus:'정상'});renderInsBlock();}
+function delInsRow(i){currentIns.splice(i,1);renderInsBlock();}
+function collectIns(){
+  return currentIns.map((_,i)=>({
+    company:(document.getElementById(`ic-${i}`)||{}).value||'',
+    product:(document.getElementById(`ip-${i}`)||{}).value||'',
+    startDate:(document.getElementById(`is-${i}`)||{}).value||'',
+    expiry:(document.getElementById(`ie-${i}`)||{}).value||'',
+    premium:Number((document.getElementById(`im-${i}`)||{}).value)||0,
+    payment:(document.getElementById(`iw-${i}`)||{}).value||'',
+    payStatus:(document.getElementById(`it-${i}`)||{}).value||''
+  })).filter(ins=>ins.company||ins.product);
+}
+function renderInsBlock(){
+  const b=document.getElementById('insBlock');
+  if(!currentIns.length){b.innerHTML='<div style="text-align:center;padding:12px;color:var(--subtle);font-size:.8rem;border:1.5px dashed var(--border);border-radius:9px">보험 계약을 추가하세요</div>';return;}
+  b.innerHTML=currentIns.map((ins,i)=>`
+    <div class="dyn-row">
+      <button class="del-row-btn" onclick="delInsRow(${i})">✕</button>
+      <div style="font-size:.72rem;font-weight:700;color:var(--primary);margin-bottom:8px;padding-right:32px">계약 ${i+1}</div>
+      <div class="dyn-row-grid ins-grid" style="padding-right:4px">
+        <div class="form-group"><label>보험사</label><input id="ic-${i}" type="text" value="${ins.company}" placeholder="삼성생명" autocomplete="off"></div>
+        <div class="form-group"><label>상품명</label><input id="ip-${i}" type="text" value="${ins.product}" placeholder="종신보험" autocomplete="off"></div>
+        <div class="form-group"><label>월 보험료(원)</label><input id="im-${i}" type="number" value="${ins.premium||''}" placeholder="150000" inputmode="numeric"></div>
+        <div class="form-group"><label>시작일</label><input id="is-${i}" type="date" value="${ins.startDate}"></div>
+        <div class="form-group"><label>갱신/만기일</label><input id="ie-${i}" type="date" value="${ins.expiry}"></div>
+        <div class="form-group"><label>납입방법</label><select id="iw-${i}">${['자동이체','카드','현금'].map(p=>`<option${ins.payment===p?' selected':''}>${p}</option>`).join('')}</select></div>
+        <div class="form-group"><label>납입상태</label><select id="it-${i}">${['정상','연체','완납'].map(p=>`<option${ins.payStatus===p?' selected':''}>${p}</option>`).join('')}</select></div>
+      </div>
+    </div>`).join('');
+}
+
+// ── MEMO ──────────────────────────────────────────────────────────────────────
+function addMemo(){
+  const inp=document.getElementById('memoInput');const t=inp.value.trim();if(!t)return;
+  currentMemos.unshift({date:new Date().toLocaleDateString('ko-KR'),text:t});
+  inp.value='';renderMemoList();
+}
+function deleteMemo(i){currentMemos.splice(i,1);renderMemoList();}
+function renderMemoList(){
+  document.getElementById('memoList').innerHTML=currentMemos.map((m,i)=>`
+    <div class="memo-item">
+      <div class="memo-date">${m.date}</div>
+      <div class="memo-text">${m.text}</div>
+      <button class="memo-del" onclick="deleteMemo(${i})">✕</button>
+    </div>`).join('');
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function formatPhone(el){
+  let v=el.value.replace(/\D/g,'');
+  el.value=v.length<=7?v.replace(/(\d{3})(\d{0,4})/,'$1-$2'):v.replace(/(\d{3})(\d{4})(\d{0,4})/,'$1-$2-$3');
+}
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className=`toast ${type} show`;
+  setTimeout(()=>t.className='toast',2800);
+}
+function showTab(tab){
+  if(tab==='search'){document.getElementById('searchInput').focus();}
+  if(tab==='alert'){const al=document.getElementById('alertBar');if(al.classList.contains('show'))al.scrollIntoView({behavior:'smooth'});}
+}
+/* ── 순수 JS로 xlsx 생성 (외부 라이브러리 불필요) ── */
+function exportExcel(){
+  try{
+    // SST (공유 문자열) 초기화
+    const _sst=[], _sstMap={};
+    function _si(s){
+      const k=String(s);
+      if(_sstMap[k]===undefined){_sstMap[k]=_sst.length;_sst.push(k);}
+      return _sstMap[k];
+    }
+    function _esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+    function _col(n){let s='';n++;while(n>0){s=String.fromCharCode(64+(n%26||26))+s;n=Math.floor((n-1)/26);}return s;}
+
+    // 워크시트 XML 생성
+    function makeWs(rows, widths, statusColIdx){
+      let x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+      x+='<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+      x+='<sheetViews><sheetView tabSelected="1" workbookViewId="0"/></sheetViews>';
+      if(widths){
+        x+='<cols>';
+        widths.forEach((w,i)=>{x+=`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`;});
+        x+='</cols>';
+      }
+      x+='<sheetData>';
+      rows.forEach((row,ri)=>{
+        // 행 색상: 상태 컬럼 기준
+        let rowS=0;
+        if(ri>0 && statusColIdx!=null && row[statusColIdx]){
+          const st=row[statusColIdx];
+          if(st==='갱신임박') rowS=2;
+          else if(st==='만기') rowS=3;
+        }
+        x+=`<row r="${ri+1}">`;
+        row.forEach((cell,ci)=>{
+          const ref=`${_col(ci)}${ri+1}`;
+          if(cell===null||cell===undefined||cell===''){
+            x+=`<c r="${ref}" s="${ri===0?1:rowS}"/>`;
+          } else if(typeof cell==='number'){
+            const s=ri===0?1:(rowS||4);
+            x+=`<c r="${ref}" s="${s}" t="n"><v>${cell}</v></c>`;
+          } else {
+            const s=ri===0?1:rowS;
+            x+=`<c r="${ref}" s="${s}" t="s"><v>${_si(cell)}</v></c>`;
+          }
+        });
+        x+='</row>';
+      });
+      x+='</sheetData>';
+      x+='<pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/>';
+      x+='</worksheet>';
+      return x;
+    }
+
+    // ── 데이터 수집 ──────────────────────────────────────────
+    const h1=['이름','연락처','생년월일','주민번호','직업','주소',
+      '가족관계','보험사','상품명','시작일','만기/갱신일','월보험료(원)',
+      '납입방법','납입상태','차량번호','차량갱신일','실손갱신일','상태','메모수'];
+    const r1=[h1];
+    customers.forEach(c=>{
+      const base=[v(c.name),v(c.phone),v(c.birth),
+        c.ssn1?c.ssn1+'-'+c.ssn2:'',v(c.job),v(c.address)];
+      const fam=(c.family||[]).map(f=>`${f.name}(${f.rel}·${f.age}세)`).join(' / ');
+      const ins=c.contracts||[];
+      const st=overallStatus(c);
+      if(!ins.length){
+        r1.push([...base,fam,'','','','','','','',v(c.carPlate),v(c.carRenewal),v(c.silseon),st,(c.memos||[]).length]);
+      } else {
+        ins.forEach((i,idx)=>{
+          r1.push([
+            ...(idx===0?base:Array(6).fill('')),
+            idx===0?fam:'',
+            v(i.company),v(i.product),v(i.startDate),v(i.expiry),
+            i.premium?Number(i.premium):'',
+            v(i.payment),v(i.payStatus),
+            idx===0?v(c.carPlate):'',idx===0?v(c.carRenewal):'',idx===0?v(c.silseon):'',
+            idx===0?st:'',idx===0?(c.memos||[]).length:''
+          ]);
+        });
+      }
+    });
+
+    const h2=['고객 이름','가족 이름','관계','나이','전화번호'];
+    const r2=[h2];
+    customers.forEach(c=>(c.family||[]).forEach(f=>
+      r2.push([v(c.name),v(f.name),v(f.rel),f.age?Number(f.age):'',v(f.phone)])));
+
+    const h3=['고객 이름','연락처','날짜','메모 내용'];
+    const r3=[h3];
+    customers.forEach(c=>(c.memos||[]).forEach(m=>
+      r3.push([v(c.name),v(c.phone),v(m.date),v(m.text)])));
+
+    const h4=['이름','연락처','구분','상품/항목','갱신일','D-Day'];
+    const r4=[h4];
+    customers.forEach(c=>{
+      (c.contracts||[]).forEach(i=>{
+        const d=i.expiry?Math.ceil((new Date(i.expiry)-Date.now())/86400000):null;
+        if(d!==null&&d>=0&&d<=60)
+          r4.push([v(c.name),v(c.phone),'보험계약',`${v(i.company)} ${v(i.product)}`,v(i.expiry),'D-'+d]);
+      });
+      let d=c.carRenewal?Math.ceil((new Date(c.carRenewal)-Date.now())/86400000):null;
+      if(d!==null&&d>=0&&d<=60) r4.push([v(c.name),v(c.phone),'차량갱신','',v(c.carRenewal),'D-'+d]);
+      d=c.silseon?Math.ceil((new Date(c.silseon)-Date.now())/86400000):null;
+      if(d!==null&&d>=0&&d<=60) r4.push([v(c.name),v(c.phone),'실손갱신','',v(c.silseon),'D-'+d]);
+    });
+
+    // ── 워크시트 생성 (SST에 문자열 등록됨) ─────────────────
+    const ws1=makeWs(r1,[10,14,12,16,10,24,28,12,14,12,12,12,10,8,12,12,12,8,6],17);
+    const ws2=makeWs(r2,[12,12,10,6,14],null);
+    const ws3=makeWs(r3,[12,14,14,60],null);
+    const ws4=makeWs(r4,[10,14,10,22,12,8],null);
+
+    // ── SST XML ──────────────────────────────────────────────
+    let ssXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+    ssXml+=`<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${_sst.length}" uniqueCount="${_sst.length}">`;
+    _sst.forEach(s=>{ssXml+=`<si><t xml:space="preserve">${_esc(s)}</t></si>`;});
+    ssXml+='</sst>';
+
+    // ── 스타일 XML ───────────────────────────────────────────
+    const stylesXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+      +'<fonts count="2">'
+      +'<font><sz val="10"/><name val="맑은 고딕"/></font>'
+      +'<font><b/><sz val="10"/><name val="맑은 고딕"/><color rgb="FFFFFFFF"/></font>'
+      +'</fonts>'
+      +'<fills count="5">'
+      +'<fill><patternFill patternType="none"/></fill>'
+      +'<fill><patternFill patternType="gray125"/></fill>'
+      +'<fill><patternFill patternType="solid"><fgColor rgb="FF1E40AF"/></patternFill></fill>'
+      +'<fill><patternFill patternType="solid"><fgColor rgb="FFFFFBEB"/></patternFill></fill>'
+      +'<fill><patternFill patternType="solid"><fgColor rgb="FFFEE2E2"/></patternFill></fill>'
+      +'</fills>'
+      +'<borders count="2">'
+      +'<border><left/><right/><top/><bottom/><diagonal/></border>'
+      +'<border>'
+      +'<left style="thin"><color rgb="FFD1D5DB"/></left>'
+      +'<right style="thin"><color rgb="FFD1D5DB"/></right>'
+      +'<top style="thin"><color rgb="FFD1D5DB"/></top>'
+      +'<bottom style="thin"><color rgb="FFD1D5DB"/></bottom>'
+      +'<diagonal/></border>'
+      +'</borders>'
+      +'<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+      +'<cellXfs count="5">'
+      +'<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"/>'
+      +'<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+      +'<xf numFmtId="0" fontId="0" fillId="3" borderId="1" xfId="0"/>'
+      +'<xf numFmtId="0" fontId="0" fillId="4" borderId="1" xfId="0"/>'
+      +'<xf numFmtId="3" fontId="0" fillId="0" borderId="1" xfId="0"><alignment horizontal="right"/></xf>'
+      +'</cellXfs>'
+      +'<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
+      +'</styleSheet>';
+
+    // ── ZIP 조립 ─────────────────────────────────────────────
+    const files={
+      '[Content_Types].xml':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet4.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>',
+      '_rels/.rels':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>',
+      'xl/workbook.xml':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView xWindow="0" yWindow="0" windowWidth="14400" windowHeight="8100"/></bookViews><sheets><sheet name="고객 목록" sheetId="1" r:id="rId1"/><sheet name="가족관계" sheetId="2" r:id="rId2"/><sheet name="상담 메모" sheetId="3" r:id="rId3"/><sheet name="갱신알림(60일)" sheetId="4" r:id="rId4"/></sheets></workbook>',
+      'xl/_rels/workbook.xml.rels':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/><Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet4.xml"/><Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/><Relationship Id="rId6" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>',
+      'xl/styles.xml':stylesXml,
+      'xl/sharedStrings.xml':ssXml,
+      'xl/worksheets/sheet1.xml':ws1,
+      'xl/worksheets/sheet2.xml':ws2,
+      'xl/worksheets/sheet3.xml':ws3,
+      'xl/worksheets/sheet4.xml':ws4,
+    };
+
+    // ── ZIP 빌더 ─────────────────────────────────────────────
+    function _s2u8(s){
+      const out=[];
+      for(let i=0;i<s.length;i++){
+        const c=s.charCodeAt(i);
+        if(c<0x80) out.push(c);
+        else if(c<0x800) out.push(0xC0|(c>>6),0x80|(c&0x3F));
+        else out.push(0xE0|(c>>12),0x80|((c>>6)&0x3F),0x80|(c&0x3F));
+      }
+      return new Uint8Array(out);
+    }
+    function _crc32(buf){
+      let crc=0xFFFFFFFF;
+      const t=[];
+      for(let i=0;i<256;i++){let c=i;for(let j=0;j<8;j++)c=c&1?(0xEDB88320^(c>>>1)):(c>>>1);t[i]=c;}
+      for(const b of buf)crc=t[(crc^b)&0xFF]^(crc>>>8);
+      return(crc^0xFFFFFFFF)>>>0;
+    }
+    function _u16(n){const b=new Uint8Array(2);new DataView(b.buffer).setUint16(0,n,true);return b;}
+    function _u32(n){const b=new Uint8Array(4);new DataView(b.buffer).setUint32(0,n,true);return b;}
+    function _cat(arr){const t=arr.reduce((s,a)=>s+a.length,0);const o=new Uint8Array(t);let p=0;arr.forEach(a=>{o.set(a,p);p+=a.length;});return o;}
+
+    const parts=[],cdir=[];let offset=0;
+    for(const[path,content] of Object.entries(files)){
+      const nb=_s2u8(path);
+      const data=_s2u8(content);
+      const crc=_crc32(data);
+      const lh=_cat([new Uint8Array([0x50,0x4B,0x03,0x04]),_u16(20),_u16(0),_u16(0),_u16(0),_u16(0),_u32(crc),_u32(data.length),_u32(data.length),_u16(nb.length),_u16(0),nb]);
+      parts.push(lh,data);
+      cdir.push(_cat([new Uint8Array([0x50,0x4B,0x01,0x02]),_u16(20),_u16(20),_u16(0),_u16(0),_u16(0),_u16(0),_u32(crc),_u32(data.length),_u32(data.length),_u16(nb.length),_u16(0),_u16(0),_u16(0),_u16(0),_u32(0),_u32(offset),nb]));
+      offset+=lh.length+data.length;
+    }
+    const cd=_cat(cdir);
+    const eocd=_cat([new Uint8Array([0x50,0x4B,0x05,0x06]),_u16(0),_u16(0),_u16(Object.keys(files).length),_u16(Object.keys(files).length),_u32(cd.length),_u32(offset),_u16(0)]);
+    const blob=new Blob([_cat([...parts,cd,eocd])],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+
+    const today=new Date().toISOString().slice(0,10);
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`보험고객목록_${today}.xlsx`;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    showToast('엑셀 파일 다운로드 완료 📊','success');
+  }catch(e){
+    console.error(e);
+    showToast('내보내기 오류: '+e.message,'warning');
+  }
+}
+
+
+
+// ── EVENTS ────────────────────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeModal();closeBackupModal();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='n'){e.preventDefault();openAddModal();}
+});
+document.getElementById('addModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.getElementById('backupModal').addEventListener('click',function(e){if(e.target===this)closeBackupModal();});
+
+// 스와이프로 모달 닫기
+let touchStartY=0;
+document.querySelectorAll('.modal').forEach(m=>{
+  m.addEventListener('touchstart',e=>{touchStartY=e.touches[0].clientY;},{passive:true});
+  m.addEventListener('touchmove',e=>{
+    if(e.touches[0].clientY-touchStartY>80&&m.scrollTop===0){closeModal();closeBackupModal();}
+  },{passive:true});
+});
+
+init();
+</script>
+</body>
+</html>
