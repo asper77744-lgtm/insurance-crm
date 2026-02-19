@@ -307,32 +307,64 @@ textarea{resize:none;min-height:70px}
     </div>
     <!-- 로그인 폼 -->
     <div id="loginForm" style="display:flex;flex-direction:column;gap:12px">
-      <input id="loginEmail" type="email" placeholder="이메일" class="auth-input" onkeydown="if(event.key==='Enter')document.getElementById('loginPw').focus()">
-      <input id="loginPw" type="password" placeholder="비밀번호" class="auth-input" onkeydown="if(event.key==='Enter')doLogin()">
+      <div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,.7);margin-bottom:5px;font-weight:600">📧 이메일</div>
+        <input id="loginEmail" type="email" placeholder="example@email.com" class="auth-input" style="width:100%"
+          oninput="checkEmailFormat(this,'loginEmailHint');"
+          onkeydown="if(event.key==='Enter')document.getElementById('loginPw').focus()">
+        <div id="loginEmailHint" style="font-size:.75rem;margin-top:5px;min-height:16px"></div>
+      </div>
+      <div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,.7);margin-bottom:5px;font-weight:600">🔒 비밀번호</div>
+        <input id="loginPw" type="password" placeholder="비밀번호 입력" class="auth-input" style="width:100%"
+          onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
       <div id="loginErr" style="color:#fca5a5;font-size:.82rem;min-height:16px;text-align:center"></div>
       <button id="btnLogin" onclick="doLogin()" class="auth-btn">로그인</button>
-      <button onclick="showResetForm()" class="auth-link">비밀번호를 잊으셨나요?</button>
+      <button onclick="showResetForm()" class="auth-link">🔑 비밀번호를 잊으셨나요?</button>
     </div>
     <!-- 회원가입 폼 -->
     <div id="signupForm" style="display:none;flex-direction:column;gap:12px">
-      <input id="signupEmail" type="email" placeholder="이메일" class="auth-input">
-      <input id="signupPw" type="password" placeholder="비밀번호 (6자 이상)" class="auth-input">
-      <input id="signupPw2" type="password" placeholder="비밀번호 확인" class="auth-input" onkeydown="if(event.key==='Enter')doSignup()">
+      <div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,.7);margin-bottom:5px;font-weight:600">📧 이메일</div>
+        <input id="signupEmail" type="email" placeholder="example@email.com" class="auth-input" style="width:100%"
+          oninput="checkEmailFormat(this,'signupEmailHint')">
+        <div id="signupEmailHint" style="font-size:.75rem;margin-top:5px;min-height:16px"></div>
+      </div>
+      <div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,.7);margin-bottom:5px;font-weight:600">🔒 비밀번호 (6자 이상)</div>
+        <input id="signupPw" type="password" placeholder="비밀번호 입력" class="auth-input" style="width:100%">
+      </div>
+      <div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,.7);margin-bottom:5px;font-weight:600">🔒 비밀번호 확인</div>
+        <input id="signupPw2" type="password" placeholder="비밀번호 다시 입력" class="auth-input" style="width:100%" onkeydown="if(event.key==='Enter')doSignup()">
+      </div>
       <div id="signupErr" style="color:#fca5a5;font-size:.82rem;min-height:16px;text-align:center"></div>
       <div id="signupSuccess" style="display:none;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);border-radius:10px;padding:12px;color:#6ee7b7;font-size:.85rem;text-align:center">
-        ✅ 가입 완료! 이메일 인증 후 로그인하세요.<br><span style="font-size:.78rem;opacity:.8">(이메일이 안 오면 스팸함 확인)</span>
+        ✅ 가입 완료! 로그인 탭에서 로그인하세요.
       </div>
       <button id="btnSignup" onclick="doSignup()" class="auth-btn">회원가입</button>
     </div>
     <!-- 비밀번호 재설정 폼 -->
     <div id="resetForm" style="display:none;flex-direction:column;gap:12px">
-      <div style="color:rgba(255,255,255,.8);font-size:.88rem;text-align:center">가입한 이메일로 재설정 링크를 보내드립니다.</div>
-      <input id="resetEmail" type="email" placeholder="이메일" class="auth-input">
-      <div id="resetErr" style="color:#fca5a5;font-size:.82rem;min-height:16px;text-align:center"></div>
-      <div id="resetSuccess" style="display:none;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);border-radius:10px;padding:12px;color:#6ee7b7;font-size:.85rem;text-align:center">
-        ✅ 재설정 이메일을 보냈습니다. 확인해주세요.
+      <div style="text-align:center;margin-bottom:4px">
+        <div style="font-size:2rem">🔑</div>
+        <div style="color:#fff;font-size:1rem;font-weight:700;margin-top:6px">비밀번호 재설정</div>
+        <div style="color:rgba(255,255,255,.7);font-size:.82rem;margin-top:4px">가입한 이메일로 재설정 링크를 보내드립니다.</div>
       </div>
-      <button id="btnReset" onclick="doResetPw()" class="auth-btn">재설정 메일 보내기</button>
+      <div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,.7);margin-bottom:5px;font-weight:600">📧 가입한 이메일</div>
+        <input id="resetEmail" type="email" placeholder="example@email.com" class="auth-input" style="width:100%"
+          oninput="checkEmailFormat(this,'resetEmailHint')"
+          onkeydown="if(event.key==='Enter')doResetPw()">
+        <div id="resetEmailHint" style="font-size:.75rem;margin-top:5px;min-height:16px"></div>
+      </div>
+      <div id="resetErr" style="color:#fca5a5;font-size:.82rem;min-height:16px;text-align:center"></div>
+      <div id="resetSuccess" style="display:none;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);border-radius:10px;padding:14px;color:#6ee7b7;font-size:.85rem;text-align:center;line-height:1.7">
+        ✅ 재설정 이메일을 보냈습니다!<br>
+        <span style="font-size:.78rem;opacity:.85">받은 편지함을 확인하세요.<br>이메일이 안 오면 스팸함을 확인해주세요.</span>
+      </div>
+      <button id="btnReset" onclick="doResetPw()" class="auth-btn">📨 재설정 메일 보내기</button>
       <button onclick="hideResetForm()" class="auth-link">← 로그인으로 돌아가기</button>
     </div>
   </div>
@@ -342,7 +374,7 @@ textarea{resize:none;min-height:70px}
 .auth-tab-active{background:#fff;color:#1e40af}
 .auth-input{padding:13px 16px;border-radius:10px;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:.95rem;outline:none;font-family:inherit;transition:border-color .15s}
 .auth-input:focus{border-color:rgba(255,255,255,.6)}
-.auth-input::placeholder{color:rgba(255,255,255,.4)}
+.auth-input::placeholder{color:rgba(255,255,255,.75)}
 .auth-btn{padding:14px;border-radius:10px;border:none;background:#fff;color:#1e40af;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s}
 .auth-btn:hover{opacity:.9}
 .auth-btn:disabled{opacity:.5;cursor:not-allowed}
@@ -724,22 +756,86 @@ function showResetForm(){
 }
 function hideResetForm(){ setAuthTab('login'); }
 
+// ── 이메일 형식 실시간 검사 ──────────────────────────────────
+function checkEmailFormat(input, hintId){
+  const val = input.value.trim();
+  const hint = document.getElementById(hintId);
+  if(!hint) return;
+  if(!val){ hint.textContent=''; return; }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // @ 없이 입력한 경우
+  if(!val.includes('@')){
+    hint.innerHTML = '<span style="color:#fca5a5">⚠️ 이메일 형식으로 입력해주세요 (예: name@gmail.com)</span>';
+    return;
+  }
+
+  // @는 있지만 도메인이 없는 경우
+  const parts = val.split('@');
+  if(parts.length===2 && !parts[1].includes('.')){
+    // 자주 쓰는 도메인 자동완성 힌트
+    const domains = ['gmail.com','naver.com','kakao.com','daum.net','nate.com','hanmail.net'];
+    const typed = parts[1].toLowerCase();
+    const match = domains.find(d => d.startsWith(typed));
+    if(match){
+      hint.innerHTML = `<span style="color:#6ee7b7;cursor:pointer" onclick="document.getElementById('${input.id}').value='${parts[0]}@${match}';checkEmailFormat(document.getElementById('${input.id}'),'${hintId}')">
+        💡 <u>${parts[0]}@${match}</u> 으로 입력하시겠어요?
+      </span>`;
+    } else {
+      hint.innerHTML = '<span style="color:#fcd34d">⚠️ 올바른 이메일 주소를 입력해주세요</span>';
+    }
+    return;
+  }
+
+  // 완전한 이메일 형식
+  if(emailRegex.test(val)){
+    hint.innerHTML = '<span style="color:#6ee7b7">✅ 올바른 이메일 형식입니다</span>';
+  } else {
+    hint.innerHTML = '<span style="color:#fca5a5">⚠️ 이메일 형식이 올바르지 않습니다</span>';
+  }
+}
+
 async function doLogin(){
-  const email=document.getElementById('loginEmail').value.trim();
-  const pw=document.getElementById('loginPw').value;
-  const err=document.getElementById('loginErr');
-  err.textContent='';
-  if(!email||!pw){err.textContent='이메일과 비밀번호를 입력하세요.';return;}
-  const btn=document.getElementById('btnLogin');
-  btn.textContent='로그인 중...';btn.disabled=true;
+  // 값을 미리 저장 (포커스 변경으로 값이 바뀌는 것 방지)
+  const email = (document.getElementById('loginEmail').value || '').trim();
+  const pw    = (document.getElementById('loginPw').value   || '');
+  const err   = document.getElementById('loginErr');
+  const btn   = document.getElementById('btnLogin');
+
+  // 오류 초기화
+  err.innerHTML = '';
+
+  // 빈 값 체크
+  if(!email || !pw){
+    err.innerHTML = '<span style="color:#fca5a5">⚠️ 이메일과 비밀번호를 모두 입력해주세요.</span>';
+    return;
+  }
+
+  // 버튼 비활성화 후 로그인 시도
+  btn.textContent = '로그인 중...';
+  btn.disabled = true;
+
   try{
-    const res=await sbSignIn(email,pw);
-    _session={access_token:res.access_token,user:res.user};
-    localStorage.setItem(LS_SES,JSON.stringify(_session));
+    const res = await sbSignIn(email, pw);
+    if(!res || !res.access_token) throw new Error('로그인 응답 오류');
+    _session = {access_token: res.access_token, user: res.user};
+    localStorage.setItem(LS_SES, JSON.stringify(_session));
+    btn.textContent = '로그인';
+    btn.disabled = false;
     await afterLogin();
-  }catch(e){
-    err.textContent=e.message.includes('Invalid')?'이메일 또는 비밀번호가 틀렸습니다.':e.message;
-  }finally{btn.textContent='로그인';btn.disabled=false;}
+  } catch(e) {
+    btn.textContent = '로그인';
+    btn.disabled = false;
+    const msg = (e.message || '').toLowerCase();
+    if(msg.includes('invalid') || msg.includes('credentials') || msg.includes('failed') || msg.includes('fetch') || msg.includes('network') || msg.includes('error')){
+      err.innerHTML = '<span style="color:#fca5a5">❌ 이메일 또는 비밀번호가 틀렸습니다.<br><small style="opacity:.85;line-height:1.8">• 등록되지 않은 이메일이거나<br>• 비밀번호가 맞지 않습니다.<br>👇 아래 비밀번호 찾기를 이용해보세요.</small></span>';
+    } else if(msg.includes('confirmed')){
+      err.innerHTML = '<span style="color:#fcd34d">⚠️ 이메일 인증이 필요합니다.<br><small>받은 편지함에서 인증 메일을 확인해주세요.</small></span>';
+    } else {
+      err.innerHTML = '<span style="color:#fca5a5">❌ 로그인에 실패했습니다: ' + e.message + '</span>';
+    }
+  }
 }
 async function doSignup(){
   const email=document.getElementById('signupEmail').value.trim();
