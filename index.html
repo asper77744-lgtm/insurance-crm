@@ -293,7 +293,7 @@ textarea{resize:none;min-height:70px}
 <style>@keyframes ldSpin{to{transform:rotate(360deg)}}</style>
 
 <!-- 로그인/회원가입 화면 -->
-<div id="authScreen" style="display:none;position:fixed;inset:0;background:linear-gradient(135deg,#1e3a8a,#1e40af,#2563eb);z-index:8000;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow-y:auto">
+<div id="authScreen" style="display:flex;position:fixed;inset:0;background:linear-gradient(135deg,#1e3a8a,#1e40af,#2563eb);z-index:8000;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow-y:auto">
   <div style="width:100%;max-width:380px">
     <div style="text-align:center;margin-bottom:28px">
       <div style="font-size:2.8rem;margin-bottom:8px">🛡️</div>
@@ -693,8 +693,9 @@ function updateSyncBadge(mode){
 function showAuthScreen(show){
   const el=document.getElementById('authScreen');
   if(el) el.style.display=show?'flex':'none';
+  // 고객목록 완전히 숨기기
   const ms=document.querySelector('.main-scroll');
-  if(ms) ms.style.visibility=show?'hidden':'visible';
+  if(ms) ms.style.display=show?'none':'block';
   const hd=document.querySelector('.app-header');
   if(hd) hd.style.display=show?'none':'flex';
   const bb=document.querySelector('.bottom-bar');
@@ -789,9 +790,28 @@ async function doLogout(){
 
 // ── INIT ─────────────────────────────────────────────────────
 async function init(){
-  // 무조건 로그인 화면 먼저 표시
+  // 로딩화면 숨기고 로그인 화면 표시
   showLoadingScreen(false);
   showAuthScreen(true);
+
+  // 저장된 세션으로 자동 로그인 시도
+  try{
+    const raw=localStorage.getItem(LS_SES);
+    if(raw){
+      const saved=JSON.parse(raw);
+      const res=await fetch(SUPABASE_URL+'/auth/v1/user',{
+        headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+saved.access_token}
+      });
+      if(res.ok){
+        _session=saved;
+        await afterLogin();
+      } else {
+        localStorage.removeItem(LS_SES);
+      }
+    }
+  }catch(e){
+    localStorage.removeItem(LS_SES);
+  }
 }
 
 async function afterLogin(){
