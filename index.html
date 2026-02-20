@@ -529,7 +529,7 @@ textarea{resize:none;min-height:70px}
         <div class="form-grid">
           <div class="form-group"><label>이름 *</label><input type="text" id="f-name" placeholder="홍길동" autocomplete="off"></div>
           <div class="form-group"><label>연락처 *</label><input type="tel" id="f-phone" placeholder="010-0000-0000" oninput="formatPhone(this)" autocomplete="off"></div>
-          <div class="form-group"><label>생년월일</label><input type="date" id="f-birth"></div>
+          <div class="form-group"><label>생년월일</label><input type="text" id="f-birth" placeholder="1990-01-01" maxlength="10" inputmode="numeric" oninput="formatBirth(this)"></div>
           <div class="form-group"><label>직업</label><input type="text" id="f-job" placeholder="직업" autocomplete="off"></div>
           <div class="form-group full"><label>주민번호</label>
             <div class="ssn-row">
@@ -557,9 +557,9 @@ textarea{resize:none;min-height:70px}
 
       <div class="form-section">
         <div class="form-section-title">🚗 차량 & 실손</div>
-        <div class="form-grid-3">
-          <div class="form-group"><label>차량번호</label><input type="text" id="f-carPlate" placeholder="12가 3456" autocomplete="off"></div>
-          <div class="form-group"><label>차량 갱신일</label><input type="date" id="f-carRenewal"></div>
+        <div id="carBlock"></div>
+        <button class="add-row-btn" onclick="addCarRow()">＋ 차량 추가</button>
+        <div class="form-grid-2" style="margin-top:10px">
           <div class="form-group"><label>실손 갱신일</label><input type="date" id="f-silseon"></div>
         </div>
       </div>
@@ -1382,7 +1382,8 @@ function renderCards(data){
     const bc=st==='유효'?'badge-active':st==='갱신임박'?'badge-renewal':'badge-expired';
     const ini=c.name.charAt(0);
     const totalPrem=(c.contracts||[]).reduce((s,i)=>s+(Number(i.premium)||0),0);
-    const carAl=isAlert(c.carRenewal),silAl=isAlert(c.silseon);
+    const carsForAlert=(c.cars&&c.cars.length)?c.cars:(c.carPlate?[{plate:c.carPlate,renewal:c.carRenewal}]:[]);
+    const carAl=carsForAlert.some(car=>isAlert(car.renewal)),silAl=isAlert(c.silseon);
 
     // family
     const famHtml=(c.family||[]).length?`<div class="fam-pills">${(c.family||[]).map(f=>`
@@ -1408,8 +1409,13 @@ function renderCards(data){
 
     // car/silseon chips
     const chips=[];
-    if(c.carPlate){chips.push(`<div class="info-chip${carAl?' alert-chip-red':''}"><span class="chip-label">차량</span><span class="chip-val">${c.carPlate}${carAl?'<span class="alert-dot"></span>':''}</span></div>`);}
-    if(c.carRenewal){chips.push(`<div class="info-chip${carAl?' alert-chip-red':''}"><span class="chip-label">차량갱신</span><span class="chip-val">${c.carRenewal}</span></div>`);}
+    // 다중 차량 표시 (cars 배열 우선, 없으면 기존 carPlate)
+    const carsArr = (c.cars&&c.cars.length) ? c.cars : (c.carPlate?[{plate:c.carPlate,renewal:c.carRenewal}]:[]);
+    carsArr.forEach(car=>{
+      const al=isAlert(car.renewal);
+      if(car.plate){chips.push(`<div class="info-chip${al?' alert-chip-red':''}"><span class="chip-label">차량</span><span class="chip-val">${car.plate}${al?'<span class="alert-dot"></span>':''}</span></div>`);}
+      if(car.renewal){chips.push(`<div class="info-chip${al?' alert-chip-red':''}"><span class="chip-label">차량갱신</span><span class="chip-val">${car.renewal}</span></div>`);}
+    });
     if(c.silseon){chips.push(`<div class="info-chip${silAl?' alert-chip-red':''}"><span class="chip-label">실손갱신</span><span class="chip-val">${c.silseon}${silAl?'<span class="alert-dot"></span>':''}</span></div>`);}
 
     const card=document.createElement('div');
@@ -1540,19 +1546,29 @@ function closeModal(){
   document.body.style.overflow='';
 }
 function clearForm(){
-  ['name','phone','birth','ssn1','ssn2','job','address','email','carPlate','carRenewal','silseon','memoInput']
+  ['name','phone','birth','ssn1','ssn2','job','address','email','silseon','memoInput']
     .forEach(f=>{const el=document.getElementById('f-'+f);if(el)el.value='';});
+  currentCars=[];renderCarBlock();
 }
 function fillForm(c){
   const s=(id,v)=>{const el=document.getElementById('f-'+id);if(el)el.value=v||'';};
   s('name',c.name);s('phone',c.phone);s('birth',c.birth);
   s('ssn1',c.ssn1);s('ssn2',c.ssn2);s('job',c.job);
   s('address',c.address);s('email',c.email);
-  s('carPlate',c.carPlate);s('carRenewal',c.carRenewal);s('silseon',c.silseon);
+  s('silseon',c.silseon);
+  // 기존 단일 차량 데이터 → 배열로 변환
+  if(c.cars && c.cars.length){
+    currentCars = c.cars;
+  } else if(c.carPlate){
+    currentCars = [{plate:c.carPlate, renewal:c.carRenewal||''}];
+  } else {
+    currentCars = [];
+  }
+  renderCarBlock();
 }
 function saveCustomer(){
   const g=id=>(document.getElementById('f-'+id)||{}).value||'';
-  const data={name:g('name'),phone:g('phone'),birth:g('birth'),ssn1:g('ssn1'),ssn2:g('ssn2'),job:g('job'),address:g('address'),email:g('email'),carPlate:g('carPlate'),carRenewal:g('carRenewal'),silseon:g('silseon'),family:collectFamily(),contracts:collectIns(),memos:currentMemos};
+  const data={name:g('name'),phone:g('phone'),birth:g('birth'),ssn1:g('ssn1'),ssn2:g('ssn2'),job:g('job'),address:g('address'),email:g('email'),cars:collectCars(),carPlate:collectCars()[0]?.plate||'',carRenewal:collectCars()[0]?.renewal||'',silseon:g('silseon'),family:collectFamily(),contracts:collectIns(),memos:currentMemos};
   if(!data.name.trim()){showToast('이름을 입력해주세요','warning');return;}
   if(editingId){
     const i=customers.findIndex(c=>c.id===editingId);customers[i]={...customers[i],...data};
@@ -1569,6 +1585,41 @@ function deleteCustomer(id){
   customers=customers.filter(x=>x.id!==id);
   save();applyFilter();updateAlertBar();updateStats();
   showToast('삭제되었습니다','warning');
+}
+
+// ── 생년월일 자동 포맷 ────────────────────────────────────────
+function formatBirth(el){
+  let v=el.value.replace(/\D/g,'');
+  if(v.length>4&&v.length<=6) v=v.slice(0,4)+'-'+v.slice(4);
+  else if(v.length>6) v=v.slice(0,4)+'-'+v.slice(4,6)+'-'+v.slice(6,8);
+  el.value=v;
+}
+
+// ── CAR (다중 차량) ───────────────────────────────────────────
+let currentCars=[];
+function addCarRow(){currentCars.push({plate:'',renewal:''});renderCarBlock();}
+function delCarRow(i){currentCars.splice(i,1);renderCarBlock();}
+function collectCars(){
+  return currentCars.map((_,i)=>({
+    plate:(document.getElementById(`cv-${i}`)||{}).value||'',
+    renewal:(document.getElementById(`cr-${i}`)||{}).value||''
+  })).filter(c=>c.plate||c.renewal);
+}
+function renderCarBlock(){
+  const b=document.getElementById('carBlock');
+  if(!b) return;
+  if(!currentCars.length){
+    b.innerHTML='<div style="text-align:center;padding:10px;color:var(--subtle);font-size:.8rem;border:1.5px dashed var(--border);border-radius:9px">차량을 추가하세요</div>';
+    return;
+  }
+  b.innerHTML=currentCars.map((c,i)=>`
+    <div class="dyn-row">
+      <button class="del-row-btn" onclick="delCarRow(${i})">✕</button>
+      <div class="dyn-row-grid" style="padding-right:32px">
+        <div class="form-group"><label>차량번호</label><input id="cv-${i}" type="text" value="${c.plate}" placeholder="12가 3456" autocomplete="off"></div>
+        <div class="form-group"><label>차량 갱신일</label><input id="cr-${i}" type="date" value="${c.renewal}"></div>
+      </div>
+    </div>`).join('');
 }
 
 // ── FAMILY (card style) ───────────────────────────────────────────────────────
@@ -1593,7 +1644,7 @@ function renderFamilyBlock(){
         <div class="form-group"><label>이름</label><input id="fn-${i}" type="text" value="${f.name}" placeholder="홍길동" autocomplete="off"></div>
         <div class="form-group"><label>관계</label><select id="fr-${i}">${RELS.map(r=>`<option${f.rel===r?' selected':''}>${r}</option>`).join('')}</select></div>
         <div class="form-group"><label>나이</label><input id="fa-${i}" type="number" value="${f.age}" placeholder="나이" inputmode="numeric" min="0" max="120"></div>
-        <div class="form-group"><label>전화번호</label><input id="fp-${i}" type="tel" value="${f.phone}" placeholder="010-0000-0000"></div>
+        <div class="form-group"><label>전화번호</label><input id="fp-${i}" type="tel" value="${f.phone}" placeholder="010-0000-0000" oninput="formatPhone(this)"></div>
       </div>
     </div>`).join('');
 }
