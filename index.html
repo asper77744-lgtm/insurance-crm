@@ -975,12 +975,25 @@ async function doSetNewPw(){
 
   btn.textContent='변경 중...'; btn.disabled=true;
   try{
+    let bearerToken = _resetToken;
+
+    // token_hash 방식이면 먼저 verify로 access_token 교환
+    if(_resetTokenHash){
+      const verifyRes = await fetch(SUPABASE_URL+'/auth/v1/verify', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
+        body: JSON.stringify({token_hash: _resetTokenHash, type:'recovery'})
+      });
+      const verifyData = await verifyRes.json();
+      if(verifyData.access_token) bearerToken = verifyData.access_token;
+    }
+
     const res = await fetch(SUPABASE_URL+'/auth/v1/user', {
       method:'PUT',
       headers:{
         'Content-Type':'application/json',
         'apikey': SUPABASE_ANON_KEY,
-        'Authorization':'Bearer '+_resetToken
+        'Authorization':'Bearer '+bearerToken
       },
       body: JSON.stringify({password: pw1})
     });
@@ -1005,6 +1018,7 @@ async function doSetNewPw(){
 
 // ── URL 해시에서 토큰 감지 (이메일 링크 클릭 시) ──────────────
 let _resetToken = null;
+let _resetTokenHash = null;
 function checkUrlToken(){
   // URL 해시 파싱 (#access_token=...&type=recovery)
   const hash = window.location.hash;
@@ -1024,7 +1038,8 @@ function checkUrlToken(){
 
   const type        = params.get('type');
   const accessToken = params.get('access_token');
-  const token       = params.get('token'); // {{ .Token }} 방식
+  const token       = params.get('token');
+  const tokenHash   = params.get('token_hash');
 
   // URL 정리 (뒤로가기 시 재실행 방지)
   history.replaceState(null,'',window.location.pathname);
@@ -1032,6 +1047,7 @@ function checkUrlToken(){
   // recovery 타입 처리
   if(type === 'recovery'){
     _resetToken = accessToken || token;
+    _resetTokenHash = tokenHash;
     showLoadingScreen(false);
     showAuthScreen(true);
     document.getElementById('loginForm').style.display='none';
