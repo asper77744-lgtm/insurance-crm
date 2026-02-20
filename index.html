@@ -712,7 +712,8 @@ async function sbSignOut(){
   _session=null; localStorage.removeItem(LS_SES);
 }
 async function sbResetPw(email){
-  return sbFetch('/auth/v1/recover',{method:'POST',body:JSON.stringify({email})});
+  const redirectTo = window.location.origin + window.location.pathname;
+  return sbFetch('/auth/v1/recover',{method:'POST',body:JSON.stringify({email, redirect_to: redirectTo})});
 }
 async function sbLoad(){
   const uid=_session.user.id;
@@ -928,12 +929,16 @@ async function doResetPw(){
 
   btn.textContent='전송 중...';btn.disabled=true;
   try{
-    // 보안상 이메일 존재 여부와 무관하게 항상 성공 메시지 표시
-    try{ await sbResetPw(email); }catch(e2){}
+    await sbResetPw(email);
     document.getElementById('resetSuccess').style.display='block';
   }catch(e){
-    // 오류가 나도 성공 메시지 (보안상 이메일 노출 방지)
-    document.getElementById('resetSuccess').style.display='block';
+    const msg=(e.message||'').toLowerCase();
+    if(msg.includes('rate limit')||msg.includes('too many')){
+      err.innerHTML='<span style="color:#fcd34d">⚠️ 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.</span>';
+    } else {
+      // 보안상 이메일 존재 여부 노출 안 함 - 항상 성공 메시지
+      document.getElementById('resetSuccess').style.display='block';
+    }
   }
   finally{btn.textContent='재설정 메일 보내기';btn.disabled=false;}
 }
