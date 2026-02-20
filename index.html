@@ -531,10 +531,10 @@ textarea{resize:none;min-height:70px}
       <div class="form-section">
         <div class="form-section-title">👤 기본 정보</div>
         <div class="form-grid">
-          <div class="form-group"><label>이름 *</label><input type="text" id="f-name" placeholder="홍길동" autocomplete="off"></div>
+          <div class="form-group"><label>이름 *</label><input type="text" id="f-name" placeholder="홍길동" autocomplete="off" lang="ko" style="ime-mode:active"></div>
           <div class="form-group"><label>연락처 *</label><input type="tel" id="f-phone" placeholder="010-0000-0000" oninput="formatPhone(this)" autocomplete="off"></div>
           <div class="form-group"><label>생년월일</label><input type="text" id="f-birth" placeholder="1990-01-01" maxlength="10" inputmode="numeric" oninput="formatBirth(this)"></div>
-          <div class="form-group"><label>직업</label><input type="text" id="f-job" placeholder="직업" autocomplete="off"></div>
+          <div class="form-group"><label>직업</label><input type="text" id="f-job" placeholder="직업" autocomplete="off" lang="ko" style="ime-mode:active"></div>
           <div class="form-group full"><label>주민번호</label>
             <div class="ssn-row">
               <input type="text" id="f-ssn1" placeholder="앞 6자리" maxlength="6" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')">
@@ -542,8 +542,8 @@ textarea{resize:none;min-height:70px}
               <input type="text" id="f-ssn2" placeholder="뒤 7자리" maxlength="7" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')">
             </div>
           </div>
-          <div class="form-group full"><label>주소</label><input type="text" id="f-address" placeholder="주소" autocomplete="off"></div>
-          <div class="form-group full"><label>이메일</label><input type="email" id="f-email" placeholder="email@example.com" autocomplete="off"></div>
+          <div class="form-group full"><label>주소</label><input type="text" id="f-address" placeholder="주소" autocomplete="off" lang="ko" style="ime-mode:active"></div>
+          <div class="form-group full"><label>이메일</label><input type="email" id="f-email" lang="en" inputmode="email" placeholder="email@example.com" autocomplete="off" style="ime-mode:inactive"></div>
         </div>
       </div>
 
@@ -1690,7 +1690,7 @@ function renderCarBlock(){
     <div class="dyn-row">
       <button class="del-row-btn" onclick="delCarRow(${i})">✕</button>
       <div class="dyn-row-grid" style="padding-right:32px">
-        <div class="form-group"><label>차량번호</label><input id="cv-${i}" type="text" value="${c.plate}" placeholder="12가 3456" autocomplete="off"></div>
+        <div class="form-group"><label>차량번호</label><input id="cv-${i}" type="text" value="${c.plate}" placeholder="12가 3456" autocomplete="off" lang="ko" style="ime-mode:active"></div>
         <div class="form-group"><label>차량 갱신일</label><input id="cr-${i}" type="text" value="${c.renewal}" placeholder="2025-01-01" maxlength="10" inputmode="numeric" oninput="formatDate(this)"></div>
       </div>
     </div>`).join('');
@@ -1698,8 +1698,24 @@ function renderCarBlock(){
 
 // ── FAMILY (card style) ───────────────────────────────────────────────────────
 const RELS=['배우자','남편','아내','자녀','아들','딸','아버지','어머니','형','오빠','언니','누나','동생','기타'];
-function addFamilyRow(){currentFamily.push({name:'',rel:'배우자',age:'',phone:''});renderFamilyBlock();}
-function delFamilyRow(i){currentFamily.splice(i,1);renderFamilyBlock();}
+function saveFamilyInputs(){
+  currentFamily = currentFamily.map((_,i)=>({
+    name:(document.getElementById(`fn-${i}`)||{}).value||'',
+    rel:(document.getElementById(`fr-${i}`)||{}).value||'배우자',
+    age:(document.getElementById(`fa-${i}`)||{}).value||'',
+    phone:(document.getElementById(`fp-${i}`)||{}).value||''
+  }));
+}
+function addFamilyRow(){
+  saveFamilyInputs();
+  currentFamily.push({name:'',rel:'배우자',age:'',phone:''});
+  renderFamilyBlock();
+}
+function delFamilyRow(i){
+  saveFamilyInputs();
+  currentFamily.splice(i,1);
+  renderFamilyBlock();
+}
 function collectFamily(){
   return currentFamily.map((_,i)=>({
     name:(document.getElementById(`fn-${i}`)||{}).value||'',
@@ -1715,17 +1731,36 @@ function renderFamilyBlock(){
     <div class="dyn-row">
       <button class="del-row-btn" onclick="delFamilyRow(${i})">✕</button>
       <div class="dyn-row-grid" style="padding-right:32px">
-        <div class="form-group"><label>이름</label><input id="fn-${i}" type="text" value="${f.name}" placeholder="홍길동" autocomplete="off"></div>
+        <div class="form-group"><label>이름</label><input id="fn-${i}" type="text" value="${f.name||''}" placeholder="홍길동" autocomplete="off" lang="ko" style="ime-mode:active"></div>
         <div class="form-group"><label>관계</label><select id="fr-${i}">${RELS.map(r=>`<option${f.rel===r?' selected':''}>${r}</option>`).join('')}</select></div>
-        <div class="form-group"><label>나이</label><input id="fa-${i}" type="number" value="${f.age}" placeholder="나이" inputmode="numeric" min="0" max="120"></div>
-        <div class="form-group"><label>전화번호</label><input id="fp-${i}" type="tel" value="${f.phone}" placeholder="010-0000-0000" oninput="formatPhone(this)"></div>
+        <div class="form-group"><label>나이</label><input id="fa-${i}" type="number" value="${f.age||''}" placeholder="나이" inputmode="numeric" min="0" max="120"></div>
+        <div class="form-group"><label>전화번호</label><input id="fp-${i}" type="tel" value="${f.phone||''}" placeholder="010-0000-0000" maxlength="13" oninput="formatPhone(this)"></div>
       </div>
     </div>`).join('');
 }
 
 // ── INSURANCE (card style) ────────────────────────────────────────────────────
-function addInsRow(){currentIns.push({company:'',product:'',startDate:'',expiry:'',premium:'',payment:'자동이체',payStatus:'정상'});renderInsBlock();}
-function delInsRow(i){currentIns.splice(i,1);renderInsBlock();}
+function saveInsInputs(){
+  currentIns = currentIns.map((_,i)=>({
+    company:(document.getElementById(`ic-${i}`)||{}).value||'',
+    product:(document.getElementById(`ip-${i}`)||{}).value||'',
+    startDate:(document.getElementById(`is-${i}`)||{}).value||'',
+    expiry:(document.getElementById(`ie-${i}`)||{}).value||'',
+    premium:(document.getElementById(`im-${i}`)||{}).value||'',
+    payment:(document.getElementById(`iw-${i}`)||{}).value||'자동이체',
+    payStatus:(document.getElementById(`it-${i}`)||{}).value||'정상'
+  }));
+}
+function addInsRow(){
+  saveInsInputs();
+  currentIns.push({company:'',product:'',startDate:'',expiry:'',premium:'',payment:'자동이체',payStatus:'정상'});
+  renderInsBlock();
+}
+function delInsRow(i){
+  saveInsInputs();
+  currentIns.splice(i,1);
+  renderInsBlock();
+}
 function collectIns(){
   return currentIns.map((_,i)=>({
     company:(document.getElementById(`ic-${i}`)||{}).value||'',
@@ -1745,8 +1780,8 @@ function renderInsBlock(){
       <button class="del-row-btn" onclick="delInsRow(${i})">✕</button>
       <div style="font-size:.72rem;font-weight:700;color:var(--primary);margin-bottom:8px;padding-right:32px">계약 ${i+1}</div>
       <div class="dyn-row-grid ins-grid" style="padding-right:4px">
-        <div class="form-group"><label>보험사</label><input id="ic-${i}" type="text" value="${ins.company}" placeholder="삼성생명" autocomplete="off"></div>
-        <div class="form-group"><label>상품명</label><input id="ip-${i}" type="text" value="${ins.product}" placeholder="종신보험" autocomplete="off"></div>
+        <div class="form-group"><label>보험사</label><input id="ic-${i}" type="text" value="${ins.company}" placeholder="삼성생명" autocomplete="off" lang="ko" style="ime-mode:active"></div>
+        <div class="form-group"><label>상품명</label><input id="ip-${i}" type="text" value="${ins.product}" placeholder="종신보험" autocomplete="off" lang="ko" style="ime-mode:active"></div>
         <div class="form-group"><label>월 보험료(원)</label><input id="im-${i}" type="number" value="${ins.premium||''}" placeholder="150000" inputmode="numeric"></div>
         <div class="form-group"><label>시작일</label><input id="is-${i}" type="text" value="${ins.startDate}" placeholder="2025-01-01" maxlength="10" inputmode="numeric" oninput="formatDate(this)"></div>
         <div class="form-group"><label>갱신/만기일</label><input id="ie-${i}" type="text" value="${ins.expiry}" placeholder="2025-01-01" maxlength="10" inputmode="numeric" oninput="formatDate(this)"></div>
