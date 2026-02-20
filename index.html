@@ -350,6 +350,29 @@ textarea{resize:none;min-height:70px}
       </div>
       <button id="btnSignup" onclick="doSignup()" class="auth-btn">회원가입</button>
     </div>
+    <!-- 새 비밀번호 입력 폼 (이메일 링크 클릭 후) -->
+    <div id="newPwForm" style="display:none;flex-direction:column;gap:12px">
+      <div style="text-align:center;margin-bottom:4px">
+        <div style="font-size:2rem">🔐</div>
+        <div style="color:#fff;font-size:1rem;font-weight:700;margin-top:6px">새 비밀번호 설정</div>
+        <div style="color:rgba(255,255,255,.7);font-size:.82rem;margin-top:4px">새로 사용할 비밀번호를 입력해주세요.</div>
+      </div>
+      <div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,.7);margin-bottom:5px;font-weight:600">🔒 새 비밀번호 (6자 이상)</div>
+        <input id="newPw1" type="password" placeholder="새 비밀번호 입력" class="auth-input" style="width:100%">
+      </div>
+      <div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,.7);margin-bottom:5px;font-weight:600">🔒 새 비밀번호 확인</div>
+        <input id="newPw2" type="password" placeholder="새 비밀번호 다시 입력" class="auth-input" style="width:100%"
+          onkeydown="if(event.key==='Enter')doSetNewPw()">
+      </div>
+      <div id="newPwErr" style="color:#fca5a5;font-size:.82rem;min-height:16px;text-align:center"></div>
+      <div id="newPwSuccess" style="display:none;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);border-radius:10px;padding:12px;color:#6ee7b7;font-size:.85rem;text-align:center">
+        ✅ 비밀번호가 변경되었습니다! 로그인해주세요.
+      </div>
+      <button id="btnNewPw" onclick="doSetNewPw()" class="auth-btn">🔐 비밀번호 변경하기</button>
+    </div>
+
     <!-- 비밀번호 재설정 폼 -->
     <div id="resetForm" style="display:none;flex-direction:column;gap:12px">
       <div style="text-align:center;margin-bottom:4px">
@@ -924,8 +947,98 @@ async function doLogout(){
   showToast('로그아웃되었습니다','warning');
 }
 
+// ── 새 비밀번호 설정 ──────────────────────────────────────────
+async function doSetNewPw(){
+  const pw1 = document.getElementById('newPw1').value;
+  const pw2 = document.getElementById('newPw2').value;
+  const err = document.getElementById('newPwErr');
+  const btn = document.getElementById('btnNewPw');
+  err.innerHTML = '';
+
+  if(!pw1||!pw2){
+    err.innerHTML='<span style="color:#fca5a5">⚠️ 비밀번호를 입력해주세요.</span>';
+    return;
+  }
+  if(pw1.length < 6){
+    err.innerHTML='<span style="color:#fca5a5">⚠️ 비밀번호는 6자 이상이어야 합니다.</span>';
+    return;
+  }
+  if(pw1 !== pw2){
+    err.innerHTML='<span style="color:#fca5a5">⚠️ 비밀번호가 일치하지 않습니다.</span>';
+    return;
+  }
+
+  btn.textContent='변경 중...'; btn.disabled=true;
+  try{
+    const res = await fetch(SUPABASE_URL+'/auth/v1/user', {
+      method:'PUT',
+      headers:{
+        'Content-Type':'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization':'Bearer '+_resetToken
+      },
+      body: JSON.stringify({password: pw1})
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.message || data.error_description || '변경 실패');
+    document.getElementById('newPwSuccess').style.display='block';
+    document.getElementById('btnNewPw').style.display='none';
+    // 3초 후 로그인 화면으로
+    setTimeout(()=>{
+      _resetToken = null;
+      document.getElementById('newPwForm').style.display='none';
+      document.getElementById('loginForm').style.display='flex';
+      document.getElementById('tabLogin').classList.add('auth-tab-active');
+      document.getElementById('tabSignup').classList.remove('auth-tab-active');
+    }, 3000);
+  }catch(e){
+    err.innerHTML='<span style="color:#fca5a5">❌ 오류: '+e.message+'</span>';
+  }finally{
+    btn.textContent='🔐 비밀번호 변경하기'; btn.disabled=false;
+  }
+}
+
+// ── URL 해시에서 토큰 감지 (이메일 링크 클릭 시) ──────────────
+let _resetToken = null;
+function checkUrlToken(){
+  const hash = window.location.hash;
+  if(!hash) return false;
+  const params = new URLSearchParams(hash.replace('#','?').replace('#','&'));
+  const type        = params.get('type');
+  const accessToken = params.get('access_token');
+  if(!accessToken) return false;
+
+  // URL 해시 제거 (뒤로가기 시 재실행 방지)
+  history.replaceState(null,'',window.location.pathname);
+
+  if(type === 'recovery'){
+    // 비밀번호 재설정 링크
+    _resetToken = accessToken;
+    showLoadingScreen(false);
+    showAuthScreen(true);
+    // 새 비밀번호 입력 폼 표시
+    document.getElementById('loginForm').style.display='none';
+    document.getElementById('signupForm').style.display='none';
+    document.getElementById('resetForm').style.display='none';
+    document.getElementById('newPwForm').style.display='flex';
+    document.getElementById('tabLogin').classList.remove('auth-tab-active');
+    document.getElementById('tabSignup').classList.remove('auth-tab-active');
+    return true;
+  }
+  if(type === 'signup' || type === 'magiclink'){
+    // 이메일 인증 완료 → 자동 로그인
+    _session = {access_token: accessToken, user:{}};
+    localStorage.setItem(LS_SES, JSON.stringify(_session));
+    return false; // init에서 afterLogin 처리
+  }
+  return false;
+}
+
 // ── INIT ─────────────────────────────────────────────────────
 async function init(){
+  // URL 해시 토큰 먼저 체크 (이메일 링크 클릭 시)
+  if(checkUrlToken()) return;
+
   // 로딩화면 숨기고 로그인 화면 표시
   showLoadingScreen(false);
   showAuthScreen(true);
