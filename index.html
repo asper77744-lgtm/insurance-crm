@@ -712,7 +712,7 @@ async function sbSignOut(){
   _session=null; localStorage.removeItem(LS_SES);
 }
 async function sbResetPw(email){
-  const redirectTo = window.location.origin + window.location.pathname;
+  const redirectTo = 'https://asper77744-lgtm.github.io/insurance-crm';
   return sbFetch('/auth/v1/recover',{method:'POST',body:JSON.stringify({email, redirect_to: redirectTo})});
 }
 async function sbLoad(){
@@ -1006,22 +1006,34 @@ async function doSetNewPw(){
 // ── URL 해시에서 토큰 감지 (이메일 링크 클릭 시) ──────────────
 let _resetToken = null;
 function checkUrlToken(){
+  // URL 해시 파싱 (#access_token=...&type=recovery)
   const hash = window.location.hash;
-  if(!hash) return false;
-  const params = new URLSearchParams(hash.replace('#','?').replace('#','&'));
+  // URL 쿼리스트링 파싱 (?access_token=...&type=recovery)
+  const search = window.location.search;
+
+  let params;
+  if(hash && hash.length > 1){
+    // #access_token=xxx&type=recovery 형식
+    params = new URLSearchParams(hash.substring(1));
+  } else if(search){
+    // ?access_token=xxx&type=recovery 형식
+    params = new URLSearchParams(search);
+  } else {
+    return false;
+  }
+
   const type        = params.get('type');
   const accessToken = params.get('access_token');
-  if(!accessToken) return false;
+  const token       = params.get('token'); // {{ .Token }} 방식
 
-  // URL 해시 제거 (뒤로가기 시 재실행 방지)
+  // URL 정리 (뒤로가기 시 재실행 방지)
   history.replaceState(null,'',window.location.pathname);
 
+  // recovery 타입 처리
   if(type === 'recovery'){
-    // 비밀번호 재설정 링크
-    _resetToken = accessToken;
+    _resetToken = accessToken || token;
     showLoadingScreen(false);
     showAuthScreen(true);
-    // 새 비밀번호 입력 폼 표시
     document.getElementById('loginForm').style.display='none';
     document.getElementById('signupForm').style.display='none';
     document.getElementById('resetForm').style.display='none';
@@ -1030,12 +1042,16 @@ function checkUrlToken(){
     document.getElementById('tabSignup').classList.remove('auth-tab-active');
     return true;
   }
-  if(type === 'signup' || type === 'magiclink'){
-    // 이메일 인증 완료 → 자동 로그인
-    _session = {access_token: accessToken, user:{}};
-    localStorage.setItem(LS_SES, JSON.stringify(_session));
-    return false; // init에서 afterLogin 처리
+
+  // 이메일 인증 완료 처리
+  if(type === 'signup' || type === 'magiclink' || type === 'email'){
+    if(accessToken){
+      _session = {access_token: accessToken, user:{}};
+      localStorage.setItem(LS_SES, JSON.stringify(_session));
+    }
+    return false;
   }
+
   return false;
 }
 
