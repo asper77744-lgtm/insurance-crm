@@ -1589,10 +1589,27 @@ function deleteCustomer(id){
 
 // ── 생년월일 자동 포맷 ────────────────────────────────────────
 function formatBirth(el){
-  let v=el.value.replace(/\D/g,'');
-  if(v.length>4&&v.length<=6) v=v.slice(0,4)+'-'+v.slice(4);
-  else if(v.length>6) v=v.slice(0,4)+'-'+v.slice(4,6)+'-'+v.slice(6,8);
-  el.value=v;
+  let v=el.value.replace(/[^0-9]/g,'');
+  if(v.length>8) v=v.slice(0,8);
+  let fmt='';
+  if(v.length<=4) fmt=v;
+  else if(v.length<=6) fmt=v.slice(0,4)+'-'+v.slice(4);
+  else fmt=v.slice(0,4)+'-'+v.slice(4,6)+'-'+v.slice(6,8);
+  el.value=fmt;
+  // 8자리 완성 시 유효성 검사
+  const hint=el.parentNode.querySelector('.birth-hint')||document.createElement('div');
+  hint.className='birth-hint';hint.style.cssText='font-size:.75rem;margin-top:4px';
+  if(!el.parentNode.querySelector('.birth-hint')) el.parentNode.appendChild(hint);
+  if(v.length===8){
+    const yr=parseInt(v.slice(0,4)),mo=parseInt(v.slice(4,6)),dy=parseInt(v.slice(6,8));
+    const now=new Date().getFullYear();
+    let err='';
+    if(yr<1900||yr>now) err='연도는 1900~'+now+' 사이로 입력해주세요.';
+    else if(mo<1||mo>12) err='월은 01~12 사이로 입력해주세요.';
+    else{ const max=new Date(yr,mo,0).getDate(); if(dy<1||dy>max) err=mo+'월은 '+max+'일까지입니다.'; }
+    if(err){ hint.style.color='#ef4444'; hint.textContent='⚠️ '+err; el.style.borderColor='#ef4444'; }
+    else{ hint.style.color='#10b981'; hint.textContent='✅ 올바른 날짜'; el.style.borderColor='#10b981'; }
+  } else { hint.textContent=''; el.style.borderColor=''; }
 }
 
 // ── CAR (다중 차량) ───────────────────────────────────────────
@@ -1701,7 +1718,10 @@ function renderMemoList(){
 // ── UTILS ─────────────────────────────────────────────────────────────────────
 function formatPhone(el){
   let v=el.value.replace(/\D/g,'');
-  el.value=v.length<=7?v.replace(/(\d{3})(\d{0,4})/,'$1-$2'):v.replace(/(\d{3})(\d{4})(\d{0,4})/,'$1-$2-$3');
+  if(v.length>11) v=v.slice(0,11); // 최대 11자리 (01012345678)
+  if(v.length<=3) el.value=v;
+  else if(v.length<=7) el.value=v.replace(/(\d{3})(\d{1,4})/,'$1-$2');
+  else el.value=v.replace(/(\d{3})(\d{4})(\d{1,4})/,'$1-$2-$3');
 }
 function showToast(msg,type='success'){
   const t=document.getElementById('toast');
