@@ -1376,7 +1376,14 @@ function contractStatus(expiry){
 }
 function overallStatus(c){
   const ss=(c.contracts||[]).map(i=>contractStatus(i.expiry));
-  if(ss.includes('만기'))return'만기';if(ss.includes('갱신임박'))return'갱신임박';return'유효';
+  if(ss.includes('만기'))return'만기';
+  if(ss.includes('갱신임박'))return'갱신임박';
+  // 차량 갱신임박 체크
+  const carsArr=(c.cars&&c.cars.length)?c.cars:(c.carPlate?[{plate:c.carPlate,renewal:c.carRenewal}]:[]);
+  if(carsArr.some(car=>isAlert(car.renewal)))return'갱신임박';
+  // 실손 갱신임박 체크
+  if(isAlert(c.silseon))return'갱신임박';
+  return'유효';
 }
 function isAlert(dt){if(!dt)return false;const d=Math.ceil((new Date(dt)-Date.now())/86400000);return d>=0&&d<=30;}
 function daysLeft(dt){if(!dt)return null;return Math.ceil((new Date(dt)-Date.now())/86400000);}
