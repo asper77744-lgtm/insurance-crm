@@ -596,7 +596,13 @@ textarea{resize:none;min-height:70px}
         <div class="memo-list" id="memoList"></div>
         <div class="memo-add-row">
           <textarea id="memoInput" placeholder="상담 내용, 특이사항..."></textarea>
-          <button class="btn btn-outline" onclick="addMemo()">메모 추가</button>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="display:flex;align-items:center;gap:5px;font-size:.75rem;color:#64748b;cursor:pointer;white-space:nowrap">
+              <input type="checkbox" id="memoSecret" style="accent-color:#ef4444;width:14px;height:14px">
+              🔒 비밀
+            </label>
+            <button class="btn btn-outline" onclick="addMemo()">추가</button>
+          </div>
         </div>
       </div>
 
@@ -1486,10 +1492,13 @@ function buildShareText(){
     }
     if(c.silseon) lines.push('🏥 실손갱신: '+c.silseon);
   }
-  if(checked('memos') && (c.memos||[]).length){
-    lines.push('');
-    lines.push('💬 상담 메모');
-    (c.memos||[]).forEach(m=>{ lines.push('  · ['+m.date+'] '+m.text); });
+  if(checked('memos')){
+    const pubMemos=(c.memos||[]).filter(m=>!m.secret);
+    if(pubMemos.length){
+      lines.push('');
+      lines.push('💬 상담 메모');
+      pubMemos.forEach(m=>{ lines.push('  · ['+m.date+'] '+m.text); });
+    }
   }
 
   lines.push('─────────────────');
@@ -1630,12 +1639,20 @@ function renderCards(data){
           <div class="card-section-title">🚗 차량 & 실손</div>
           <div class="info-row">${chips.join('')}</div>
         </div>`:''}
-        ${(c.memos||[]).length?`<div class="card-divider"></div>
-        <div class="card-section">
-          <div class="card-section-title">💬 최근 메모</div>
-          <div style="font-size:.82rem;color:var(--muted);background:var(--surface2);border-radius:8px;padding:8px 10px;border-left:3px solid var(--primary-light)">${(c.memos[0]||{}).text||''}</div>
-          ${c.memos.length>1?`<div style="font-size:.72rem;color:var(--subtle);margin-top:4px">외 ${c.memos.length-1}개</div>`:''}
-        </div>`:''}
+        ${(()=>{
+          const allMemos=c.memos||[];
+          if(!allMemos.length) return '';
+          const pubMemos=allMemos.filter(m=>!m.secret);
+          const secCnt=allMemos.filter(m=>m.secret).length;
+          const firstPub=pubMemos[0];
+          return `<div class="card-divider"></div>
+          <div class="card-section">
+            <div class="card-section-title">💬 최근 메모</div>
+            ${firstPub?`<div style="font-size:.82rem;color:var(--muted);background:var(--surface2);border-radius:8px;padding:8px 10px;border-left:3px solid var(--primary-light)">${firstPub.text}</div>`:''}
+            ${(pubMemos.length>1||secCnt)?`<div style="font-size:.72rem;color:var(--subtle);margin-top:4px">${pubMemos.length>1?'외 '+(pubMemos.length-1)+'개 ':''} ${secCnt?'🔒 비밀 '+secCnt+'개':''}</div>`:''}
+            ${!firstPub&&secCnt?`<div style="font-size:.78rem;color:#ef4444">🔒 비밀 메모 ${secCnt}개</div>`:''}
+          </div>`;
+        })()}
         <div class="card-actions">
           <button class="btn btn-outline btn-sm" style="flex:1" onclick="event.stopPropagation();openEdit(${c.id})">✏️ 수정</button>
           <button class="btn btn-outline btn-sm" style="flex:1;color:#1e3a8a" onclick="event.stopPropagation();openShare(${c.id})">📤 공유</button>
@@ -1962,18 +1979,29 @@ function renderInsBlock(){
 
 // ── MEMO ──────────────────────────────────────────────────────────────────────
 function addMemo(){
-  const inp=document.getElementById('memoInput');const t=inp.value.trim();if(!t)return;
-  currentMemos.unshift({date:new Date().toLocaleDateString('ko-KR'),text:t});
-  inp.value='';renderMemoList();
+  const inp=document.getElementById('memoInput');
+  const t=inp.value.trim();if(!t)return;
+  const secret=document.getElementById('memoSecret')?.checked||false;
+  currentMemos.unshift({date:new Date().toLocaleDateString('ko-KR'),text:t,secret});
+  inp.value='';
+  if(document.getElementById('memoSecret')) document.getElementById('memoSecret').checked=false;
+  renderMemoList();
 }
 function deleteMemo(i){currentMemos.splice(i,1);renderMemoList();}
 function renderMemoList(){
   document.getElementById('memoList').innerHTML=currentMemos.map((m,i)=>`
-    <div class="memo-item">
-      <div class="memo-date">${m.date}</div>
+    <div class="memo-item" style="${m.secret?'background:#fff1f2;border-left:3px solid #ef4444':''}">
+      <div class="memo-date">
+        ${m.secret?'<span style="color:#ef4444;font-size:.72rem;font-weight:700">🔒 비밀</span> ':''}${m.date}
+        <button onclick="toggleMemoSecret(${i})" style="background:none;border:none;cursor:pointer;font-size:.72rem;color:#94a3b8;margin-left:4px" title="비밀 토글">${m.secret?'🔓공개로 변경':'🔒비밀로 변경'}</button>
+      </div>
       <div class="memo-text">${m.text}</div>
       <button class="memo-del" onclick="deleteMemo(${i})">✕</button>
     </div>`).join('');
+}
+function toggleMemoSecret(i){
+  currentMemos[i].secret = !currentMemos[i].secret;
+  renderMemoList();
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
