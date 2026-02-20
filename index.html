@@ -238,7 +238,7 @@ textarea{resize:none;min-height:70px}
 .memo-list{display:flex;flex-direction:column;gap:7px;margin-top:8px}
 .memo-item{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--primary-light);border-radius:9px;padding:10px 12px;position:relative}
 .memo-date{font-size:.69rem;color:var(--subtle);margin-bottom:3px}
-.memo-text{font-size:.84rem;line-height:1.5;padding-right:28px}
+.memo-text{font-size:.84rem;line-height:1.5;padding-right:28px;white-space:pre-wrap;word-break:break-word}
 .memo-del{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--subtle);cursor:pointer;font-size:.8rem;padding:3px 6px;border-radius:5px}
 .memo-del:active{background:#fee2e2;color:var(--danger)}
 .memo-add-row{display:flex;flex-direction:column;gap:7px;margin-top:8px}
@@ -1684,7 +1684,7 @@ function renderCards(data){
           return `<div class="card-divider"></div>
           <div class="card-section">
             <div class="card-section-title">💬 최근 메모</div>
-            ${firstPub?`<div style="font-size:.82rem;color:var(--muted);background:var(--surface2);border-radius:8px;padding:8px 10px;border-left:3px solid var(--primary-light)">${firstPub.text}</div>`:''}
+            ${firstPub?`<div style="font-size:.82rem;color:var(--muted);background:var(--surface2);border-radius:8px;padding:8px 10px;border-left:3px solid var(--primary-light);white-space:pre-wrap;word-break:break-word">${firstPub.text}</div>`:''}
             ${(pubMemos.length>1||secCnt)?`<div style="font-size:.72rem;color:var(--subtle);margin-top:4px">${pubMemos.length>1?'외 '+(pubMemos.length-1)+'개 ':''} ${secCnt?'🔒 비밀 '+secCnt+'개':''}</div>`:''}
             ${!firstPub&&secCnt?`<div style="font-size:.78rem;color:#ef4444">🔒 비밀 메모 ${secCnt}개</div>`:''}
           </div>`;
@@ -2033,17 +2033,44 @@ function deleteMemo(i){currentMemos.splice(i,1);renderMemoList();}
 function renderMemoList(){
   document.getElementById('memoList').innerHTML=currentMemos.map((m,i)=>`
     <div class="memo-item" style="${m.secret?'background:#fff1f2;border-left:3px solid #ef4444':''}">
-      <div class="memo-date">
-        ${m.secret?'<span style="color:#ef4444;font-size:.72rem;font-weight:700">🔒 비밀</span> ':''}${m.date}
-        <button onclick="toggleMemoSecret(${i})" style="background:none;border:none;cursor:pointer;font-size:.72rem;color:#94a3b8;margin-left:4px" title="비밀 토글">${m.secret?'🔓공개로 변경':'🔒비밀로 변경'}</button>
+      <div class="memo-date" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding-right:24px">
+        ${m.secret?'<span style="color:#ef4444;font-size:.72rem;font-weight:700">🔒 비밀</span>':''}
+        <span>${m.date}</span>
+        <button onclick="toggleMemoSecret(${i})" style="background:none;border:none;cursor:pointer;font-size:.68rem;color:#94a3b8" title="비밀 토글">${m.secret?'🔓공개':'🔒비밀'}</button>
+        <button onclick="startMemoEdit(${i})" style="background:none;border:none;cursor:pointer;font-size:.68rem;color:#3b82f6">✏️수정</button>
       </div>
-      <div class="memo-text">${m.text}</div>
+      <div id="memo-view-${i}" class="memo-text">${m.text}</div>
+      <div id="memo-edit-${i}" style="display:none;margin-top:6px">
+        <textarea id="memo-textarea-${i}" style="width:100%;border:1.5px solid #3b82f6;border-radius:8px;padding:8px;font-size:.83rem;resize:vertical;min-height:60px;font-family:inherit">${m.text}</textarea>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button onclick="saveMemoEdit(${i})" class="btn btn-primary" style="flex:1;padding:6px;font-size:.8rem">💾 저장</button>
+          <button onclick="cancelMemoEdit(${i})" class="btn btn-outline" style="flex:1;padding:6px;font-size:.8rem">취소</button>
+        </div>
+      </div>
       <button class="memo-del" onclick="deleteMemo(${i})">✕</button>
     </div>`).join('');
 }
 function toggleMemoSecret(i){
   currentMemos[i].secret = !currentMemos[i].secret;
   renderMemoList();
+}
+function startMemoEdit(i){
+  document.getElementById('memo-view-'+i).style.display='none';
+  document.getElementById('memo-edit-'+i).style.display='block';
+  const ta=document.getElementById('memo-textarea-'+i);
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+function cancelMemoEdit(i){
+  document.getElementById('memo-view-'+i).style.display='';
+  document.getElementById('memo-edit-'+i).style.display='none';
+}
+function saveMemoEdit(i){
+  const val=document.getElementById('memo-textarea-'+i).value.trim();
+  if(!val){showToast('내용을 입력해주세요','warning');return;}
+  currentMemos[i].text=val;
+  renderMemoList();
+  showToast('메모가 수정되었습니다','success');
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
