@@ -522,6 +522,25 @@ textarea{resize:none;min-height:70px}
 </div>
 <button class="fab" onclick="openAddModal()">＋</button>
 
+<!-- 공유 모달 -->
+<div id="shareModal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.5);align-items:flex-end;justify-content:center">
+  <div style="background:#fff;width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:20px;max-height:85vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:1rem;font-weight:700;color:#1e3a8a">📤 고객 정보 공유</div>
+      <button onclick="closeShareModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#64748b">✕</button>
+    </div>
+    <div id="shareCustomerName" style="font-size:.9rem;color:#64748b;margin-bottom:14px"></div>
+    <div style="font-size:.8rem;font-weight:700;color:#374151;margin-bottom:8px">공유할 항목 선택</div>
+    <div id="shareCheckboxes" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+    <div style="font-size:.8rem;font-weight:700;color:#374151;margin-bottom:6px">미리보기</div>
+    <div id="sharePreview" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;font-size:.82rem;color:#374151;white-space:pre-wrap;min-height:60px;margin-bottom:16px;line-height:1.7"></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="copyShareText()" class="btn btn-outline" style="flex:1">📋 복사</button>
+      <button onclick="shareKakao()" class="btn btn-primary" style="flex:1">💬 카카오톡 공유</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADD/EDIT MODAL -->
 <div class="modal-overlay" id="addModal">
   <div class="modal">
@@ -1384,6 +1403,132 @@ function setImeModes(){
   });
 }
 
+// ── 공유 기능 ─────────────────────────────────────────────────
+let _shareCustomer = null;
+
+const SHARE_ITEMS = [
+  {key:'basic',    label:'기본정보 (이름·전화·직업·주소)'},
+  {key:'birth',    label:'생년월일 / 주민번호 앞자리'},
+  {key:'family',   label:'가족관계'},
+  {key:'contracts',label:'보험 계약'},
+  {key:'cars',     label:'차량 & 실손'},
+  {key:'memos',    label:'상담 메모'},
+];
+
+function openShare(id){
+  _shareCustomer = customers.find(c=>c.id===id);
+  if(!_shareCustomer) return;
+  document.getElementById('shareCustomerName').textContent = '고객: '+_shareCustomer.name;
+
+  // 체크박스 생성
+  const box = document.getElementById('shareCheckboxes');
+  box.innerHTML = SHARE_ITEMS.map(item=>`
+    <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f8fafc;border-radius:8px;cursor:pointer;font-size:.85rem">
+      <input type="checkbox" id="sc-${item.key}" checked onchange="updateSharePreview()"
+        style="width:16px;height:16px;accent-color:#1e40af">
+      ${item.label}
+    </label>`).join('');
+
+  updateSharePreview();
+  const m = document.getElementById('shareModal');
+  m.style.display='flex';
+  document.body.style.overflow='hidden';
+}
+
+function closeShareModal(){
+  document.getElementById('shareModal').style.display='none';
+  document.body.style.overflow='';
+}
+
+function buildShareText(){
+  const c = _shareCustomer;
+  if(!c) return '';
+  const checked = key => document.getElementById('sc-'+key)?.checked;
+  let lines = ['📋 고객 정보'];
+  lines.push('─────────────────');
+
+  if(checked('basic')){
+    lines.push('👤 '+c.name);
+    if(c.phone) lines.push('📞 '+c.phone);
+    if(c.job)   lines.push('💼 '+c.job);
+    if(c.address) lines.push('🏠 '+c.address);
+  }
+  if(checked('birth')){
+    if(c.birth) lines.push('🎂 생년월일: '+c.birth);
+    if(c.ssn1)  lines.push('🪪 주민번호: '+c.ssn1+'-●●●●●●●');
+  }
+  if(checked('family') && (c.family||[]).length){
+    lines.push('');
+    lines.push('👨‍👩‍👧 가족관계');
+    (c.family||[]).forEach(f=>{
+      lines.push('  · '+f.name+'('+f.rel+') '+f.age+'세'+(f.phone?' '+f.phone:''));
+    });
+  }
+  if(checked('contracts') && (c.contracts||[]).length){
+    lines.push('');
+    lines.push('📋 보험 계약');
+    (c.contracts||[]).forEach(ins=>{
+      lines.push('  · '+ins.company+' '+ins.product);
+      if(ins.expiry) lines.push('    만기: '+ins.expiry+(ins.premium?' / '+Number(ins.premium).toLocaleString()+'원':''));
+    });
+  }
+  if(checked('cars')){
+    const carsArr=(c.cars&&c.cars.length)?c.cars:(c.carPlate?[{plate:c.carPlate,renewal:c.carRenewal}]:[]);
+    if(carsArr.length){
+      lines.push('');
+      lines.push('🚗 차량');
+      carsArr.forEach(car=>{ if(car.plate) lines.push('  · '+car.plate+(car.renewal?' 갱신: '+car.renewal:'')); });
+    }
+    if(c.silseon) lines.push('🏥 실손갱신: '+c.silseon);
+  }
+  if(checked('memos') && (c.memos||[]).length){
+    lines.push('');
+    lines.push('💬 상담 메모');
+    (c.memos||[]).forEach(m=>{ lines.push('  · ['+m.date+'] '+m.text); });
+  }
+
+  lines.push('─────────────────');
+  lines.push('📱 보험 고객 관리 앱');
+  return lines.join('\n');
+}
+
+function updateSharePreview(){
+  document.getElementById('sharePreview').textContent = buildShareText();
+}
+
+function copyShareText(){
+  const text = buildShareText();
+  navigator.clipboard.writeText(text).then(()=>{
+    showToast('클립보드에 복사되었습니다!','success');
+    closeShareModal();
+  }).catch(()=>{
+    // fallback
+    const ta=document.createElement('textarea');
+    ta.value=text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('클립보드에 복사되었습니다!','success');
+    closeShareModal();
+  });
+}
+
+function shareKakao(){
+  const text = buildShareText();
+  // 카카오톡 공유 - Web Share API 사용 (모바일에서 앱 선택 가능)
+  if(navigator.share){
+    navigator.share({
+      title: _shareCustomer.name+' 고객 정보',
+      text: text
+    }).then(()=>{
+      closeShareModal();
+    }).catch(()=>{});
+  } else {
+    // PC 또는 미지원 환경 - 복사로 대체
+    copyShareText();
+    showToast('카카오톡을 열고 붙여넣기 하세요!','success');
+  }
+}
+
 function toggleCard(topEl){
   const card = topEl.closest('.customer-card');
   const body = card.querySelector('.card-body');
@@ -1488,6 +1633,7 @@ function renderCards(data){
         </div>`:''}
         <div class="card-actions">
           <button class="btn btn-outline btn-sm" style="flex:1" onclick="event.stopPropagation();openEdit(${c.id})">✏️ 수정</button>
+          <button class="btn btn-outline btn-sm" style="flex:1;color:#1e3a8a" onclick="event.stopPropagation();openShare(${c.id})">📤 공유</button>
           <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCustomer(${c.id})">🗑️</button>
         </div>
       </div>
