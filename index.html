@@ -717,25 +717,36 @@ async function sbResetPw(email){
 }
 async function sbLoad(){
   const uid=_session.user.id || _session.user.sub;
-  const rows=await sbFetch(`/rest/v1/customers?user_id=eq.${uid}&select=data`,{headers:{'Accept':'application/json'}});
+  if(!uid) return null;
+  // 최신순으로 1개만 가져오기
+  const rows=await sbFetch(`/rest/v1/customers?user_id=eq.${uid}&select=data&order=updated_at.desc&limit=1`,{headers:{'Accept':'application/json'}});
   return (rows&&rows.length&&rows[0].data) ? rows[0].data : null;
 }
 async function sbSave(arr){
   const uid = _session.user.id || _session.user.sub;
   if(!uid) throw new Error('user id 없음');
 
-  // 기존 row 있는지 확인
-  const existing = await sbFetch(`/rest/v1/customers?user_id=eq.${uid}&select=id`,{
+  // 기존 row 모두 확인
+  const existing = await sbFetch(`/rest/v1/customers?user_id=eq.${uid}&select=id&order=updated_at.desc`,{
     headers:{'Accept':'application/json'}
   });
 
   if(existing && existing.length > 0){
-    // 기존 row 업데이트
-    await sbFetch(`/rest/v1/customers?user_id=eq.${uid}`,{
+    // 첫 번째 row만 업데이트
+    const firstId = existing[0].id;
+    await sbFetch(`/rest/v1/customers?id=eq.${firstId}`,{
       method:'PATCH',
       body:JSON.stringify({data:arr, updated_at:new Date().toISOString()}),
       headers:{'Prefer':'return=minimal'}
     });
+    // 나머지 중복 row 삭제
+    if(existing.length > 1){
+      const extraIds = existing.slice(1).map(r=>r.id).join(',');
+      await sbFetch(`/rest/v1/customers?id=in.(${extraIds})`,{
+        method:'DELETE',
+        headers:{'Prefer':'return=minimal'}
+      });
+    }
   } else {
     // 새 row 생성
     await sbFetch('/rest/v1/customers',{
