@@ -1075,7 +1075,14 @@ function checkUrlToken(){
 // ── INIT ─────────────────────────────────────────────────────
 async function init(){
   // URL 해시 토큰 먼저 체크 (이메일 링크 클릭 시)
-  if(checkUrlToken()) return;
+  // recovery 링크면 세션 복원 안 하고 비밀번호 재설정 화면 표시
+  const isRecovery = checkUrlToken();
+  if(isRecovery){
+    // 기존 세션 완전히 제거 (비밀번호 재설정 중이므로)
+    localStorage.removeItem(LS_SES);
+    _session = null;
+    return;
+  }
 
   // 로딩화면 숨기고 로그인 화면 표시
   showLoadingScreen(false);
