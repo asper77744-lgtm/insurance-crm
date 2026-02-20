@@ -1409,6 +1409,7 @@ let _shareCustomer = null;
 const SHARE_ITEMS = [
   {key:'basic',    label:'기본정보 (이름·전화·직업·주소)'},
   {key:'birth',    label:'생년월일 / 주민번호 앞자리'},
+  {key:'ssn2full', label:'⚠️ 주민번호 뒷자리 전체 공개', default:false},
   {key:'family',   label:'가족관계'},
   {key:'contracts',label:'보험 계약'},
   {key:'cars',     label:'차량 & 실손'},
@@ -1423,8 +1424,8 @@ function openShare(id){
   // 체크박스 생성
   const box = document.getElementById('shareCheckboxes');
   box.innerHTML = SHARE_ITEMS.map(item=>`
-    <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f8fafc;border-radius:8px;cursor:pointer;font-size:.85rem">
-      <input type="checkbox" id="sc-${item.key}" checked onchange="updateSharePreview()"
+    <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:${item.default===false?'#fff7ed':'#f8fafc'};border-radius:8px;cursor:pointer;font-size:.85rem;border:${item.default===false?'1px solid #fed7aa':'none'}">
+      <input type="checkbox" id="sc-${item.key}" ${item.default===false?'':'checked'} onchange="updateSharePreview()"
         style="width:16px;height:16px;accent-color:#1e40af">
       ${item.label}
     </label>`).join('');
@@ -1455,7 +1456,11 @@ function buildShareText(){
   }
   if(checked('birth')){
     if(c.birth) lines.push('🎂 생년월일: '+c.birth);
-    if(c.ssn1)  lines.push('🪪 주민번호: '+c.ssn1+'-●●●●●●●');
+    if(c.ssn1){
+      const showSsn2 = document.getElementById('sc-ssn2full')?.checked;
+      const ssn2display = showSsn2 ? (c.ssn2||'●●●●●●●') : '●●●●●●●';
+      lines.push('🪪 주민번호: '+c.ssn1+'-'+ssn2display);
+    }
   }
   if(checked('family') && (c.family||[]).length){
     lines.push('');
