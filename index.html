@@ -1041,13 +1041,11 @@ function checkUrlToken(){
   const token       = params.get('token');
   const tokenHash   = params.get('token_hash');
 
-  // URL 정리 (뒤로가기 시 재실행 방지)
-  history.replaceState(null,'',window.location.pathname);
-
-  // recovery 타입 처리
+  // recovery 타입 처리 (URL 정리 전에 먼저 처리)
   if(type === 'recovery'){
     _resetToken = accessToken || token;
     _resetTokenHash = tokenHash;
+    history.replaceState(null,'',window.location.pathname);
     showLoadingScreen(false);
     showAuthScreen(true);
     document.getElementById('loginForm').style.display='none';
@@ -1058,6 +1056,9 @@ function checkUrlToken(){
     document.getElementById('tabSignup').classList.remove('auth-tab-active');
     return true;
   }
+
+  // URL 정리
+  history.replaceState(null,'',window.location.pathname);
 
   // 이메일 인증 완료 처리
   if(type === 'signup' || type === 'magiclink' || type === 'email'){
