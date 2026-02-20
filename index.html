@@ -365,11 +365,15 @@ textarea{resize:none;min-height:70px}
         <div id="resetEmailHint" style="font-size:.75rem;margin-top:5px;min-height:16px"></div>
       </div>
       <div id="resetErr" style="color:#fca5a5;font-size:.82rem;min-height:16px;text-align:center"></div>
-      <div id="resetSuccess" style="display:none;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);border-radius:10px;padding:14px;color:#6ee7b7;font-size:.85rem;text-align:center;line-height:1.7">
+      <div id="resetSuccess" style="display:none;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);border-radius:10px;padding:14px;color:#6ee7b7;font-size:.85rem;text-align:center;line-height:1.9">
         ✅ 재설정 메일을 발송했습니다!<br>
-        <span style="font-size:.78rem;opacity:.85">
+        <span style="font-size:.78rem;opacity:.9">
         📬 받은 편지함을 확인하세요.<br>
-        📁 이메일이 안 오면 스팸함을 확인해주세요.
+        📁 이메일이 안 오면 스팸함을 확인해주세요.<br>
+        </span>
+        <span style="font-size:.78rem;color:#fcd34d;display:block;margin-top:6px;line-height:1.7">
+        ❌ 그래도 없으면 이메일 주소가 틀린 것입니다.<br>
+        가입할 때 사용한 이메일을 다시 확인해주세요.
         </span>
       </div>
       <button id="btnReset" onclick="doResetPw()" class="auth-btn">📨 재설정 메일 보내기</button>
@@ -901,41 +905,12 @@ async function doResetPw(){
 
   btn.textContent='전송 중...';btn.disabled=true;
   try{
-    // 이메일 존재 여부 확인 - 잘못된 비밀번호로 로그인 시도
-    // 존재하는 이메일 → "Invalid password" 오류
-    // 없는 이메일 → "User not found" 오류
-    const checkRes = await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=password', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
-      body:JSON.stringify({email, password:'__check_email_exists__'})
-    });
-    const checkData = await checkRes.json();
-    const checkMsg = JSON.stringify(checkData).toLowerCase();
-
-    // 이메일이 없는 경우
-    if(checkMsg.includes('not found') || checkMsg.includes('no user') || checkMsg.includes('invalid login credentials') && checkMsg.includes('email')){
-      err.innerHTML='<span style="color:#fca5a5">❌ 가입되지 않은 이메일입니다.<br><small>이메일 주소를 다시 확인하거나 회원가입을 해주세요.</small></span>';
-      btn.textContent='재설정 메일 보내기';btn.disabled=false;
-      return;
-    }
-
-    // 이메일 존재 확인됨 → 재설정 메일 발송 (결과와 상관없이 성공 표시)
-    try{
-      await sbResetPw(email);
-    }catch(e2){
-      // 이미 메일이 발송된 경우도 있으므로 무시
-    }
+    // 보안상 이메일 존재 여부와 무관하게 항상 성공 메시지 표시
+    try{ await sbResetPw(email); }catch(e2){}
     document.getElementById('resetSuccess').style.display='block';
-
   }catch(e){
-    const msg=(e.message||'').toLowerCase();
-    if(msg.includes('rate limit')||msg.includes('too many')){
-      err.innerHTML='<span style="color:#fcd34d">⚠️ 잠시 후 다시 시도해주세요. (요청 횟수 초과)</span>';
-    } else if(msg.includes('not found')||msg.includes('no user')){
-      err.innerHTML='<span style="color:#fca5a5">❌ 가입되지 않은 이메일입니다.<br><small>이메일 주소를 다시 확인하거나 회원가입을 해주세요.</small></span>';
-    } else {
-      err.innerHTML='<span style="color:#fca5a5">❌ 가입되지 않은 이메일입니다.<br><small>이메일 주소를 다시 확인하거나 회원가입을 해주세요.</small></span>';
-    }
+    // 오류가 나도 성공 메시지 (보안상 이메일 노출 방지)
+    document.getElementById('resetSuccess').style.display='block';
   }
   finally{btn.textContent='재설정 메일 보내기';btn.disabled=false;}
 }
