@@ -564,7 +564,7 @@ textarea{resize:none;min-height:70px}
         <div id="carBlock"></div>
         <button class="add-row-btn" onclick="addCarRow()">＋ 차량 추가</button>
         <div class="form-grid-2" style="margin-top:10px">
-          <div class="form-group"><label>실손 갱신일</label><input type="date" id="f-silseon"></div>
+          <div class="form-group"><label>실손 갱신일</label><input type="text" id="f-silseon" placeholder="2025-01-01" maxlength="10" inputmode="numeric" oninput="formatDate(this)"></div>
         </div>
       </div>
 
@@ -1628,10 +1628,51 @@ function formatBirth(el){
   } else { hint.textContent=''; el.style.borderColor=''; }
 }
 
+// ── 날짜 자동 포맷 (차량갱신일, 실손갱신일, 보험날짜) ──────────
+function formatDate(el){
+  let v=el.value.replace(/[^0-9]/g,'');
+  if(v.length>8) v=v.slice(0,8);
+  let fmt='';
+  if(v.length<=4) fmt=v;
+  else if(v.length<=6) fmt=v.slice(0,4)+'-'+v.slice(4);
+  else fmt=v.slice(0,4)+'-'+v.slice(4,6)+'-'+v.slice(6,8);
+  el.value=fmt;
+
+  // 8자리 완성 시 유효성 검사
+  let hint=el.parentNode.querySelector('.date-hint');
+  if(!hint){hint=document.createElement('div');hint.className='date-hint';hint.style.cssText='font-size:.75rem;margin-top:4px';el.parentNode.appendChild(hint);}
+
+  if(v.length===8){
+    const yr=parseInt(v.slice(0,4)),mo=parseInt(v.slice(4,6)),dy=parseInt(v.slice(6,8));
+    let err='';
+    if(yr<1900||yr>2100) err='연도는 1900~2100 사이로 입력해주세요.';
+    else if(mo<1||mo>12) err='월은 01~12 사이로 입력해주세요.';
+    else{ const max=new Date(yr,mo,0).getDate(); if(dy<1||dy>max) err=mo+'월은 '+max+'일까지입니다.'; }
+    if(err){ hint.style.color='#ef4444'; hint.textContent='⚠️ '+err; el.style.borderColor='#ef4444'; }
+    else{ hint.style.color='#10b981'; hint.textContent='✅ 올바른 날짜'; el.style.borderColor='#10b981'; }
+  } else { hint.textContent=''; el.style.borderColor=''; }
+}
+
 // ── CAR (다중 차량) ───────────────────────────────────────────
 let currentCars=[];
-function addCarRow(){currentCars.push({plate:'',renewal:''});renderCarBlock();}
-function delCarRow(i){currentCars.splice(i,1);renderCarBlock();}
+function addCarRow(){
+  // 기존 입력값 먼저 저장
+  currentCars = currentCars.map((_,i)=>({
+    plate:(document.getElementById(`cv-${i}`)||{}).value||'',
+    renewal:(document.getElementById(`cr-${i}`)||{}).value||''
+  }));
+  currentCars.push({plate:'',renewal:''});
+  renderCarBlock();
+}
+function delCarRow(i){
+  // 삭제 전 현재 입력값 저장
+  currentCars = currentCars.map((_,j)=>({
+    plate:(document.getElementById(`cv-${j}`)||{}).value||'',
+    renewal:(document.getElementById(`cr-${j}`)||{}).value||''
+  }));
+  currentCars.splice(i,1);
+  renderCarBlock();
+}
 function collectCars(){
   return currentCars.map((_,i)=>({
     plate:(document.getElementById(`cv-${i}`)||{}).value||'',
@@ -1650,7 +1691,7 @@ function renderCarBlock(){
       <button class="del-row-btn" onclick="delCarRow(${i})">✕</button>
       <div class="dyn-row-grid" style="padding-right:32px">
         <div class="form-group"><label>차량번호</label><input id="cv-${i}" type="text" value="${c.plate}" placeholder="12가 3456" autocomplete="off"></div>
-        <div class="form-group"><label>차량 갱신일</label><input id="cr-${i}" type="date" value="${c.renewal}"></div>
+        <div class="form-group"><label>차량 갱신일</label><input id="cr-${i}" type="text" value="${c.renewal}" placeholder="2025-01-01" maxlength="10" inputmode="numeric" oninput="formatDate(this)"></div>
       </div>
     </div>`).join('');
 }
@@ -1707,8 +1748,8 @@ function renderInsBlock(){
         <div class="form-group"><label>보험사</label><input id="ic-${i}" type="text" value="${ins.company}" placeholder="삼성생명" autocomplete="off"></div>
         <div class="form-group"><label>상품명</label><input id="ip-${i}" type="text" value="${ins.product}" placeholder="종신보험" autocomplete="off"></div>
         <div class="form-group"><label>월 보험료(원)</label><input id="im-${i}" type="number" value="${ins.premium||''}" placeholder="150000" inputmode="numeric"></div>
-        <div class="form-group"><label>시작일</label><input id="is-${i}" type="date" value="${ins.startDate}"></div>
-        <div class="form-group"><label>갱신/만기일</label><input id="ie-${i}" type="date" value="${ins.expiry}"></div>
+        <div class="form-group"><label>시작일</label><input id="is-${i}" type="text" value="${ins.startDate}" placeholder="2025-01-01" maxlength="10" inputmode="numeric" oninput="formatDate(this)"></div>
+        <div class="form-group"><label>갱신/만기일</label><input id="ie-${i}" type="text" value="${ins.expiry}" placeholder="2025-01-01" maxlength="10" inputmode="numeric" oninput="formatDate(this)"></div>
         <div class="form-group"><label>납입방법</label><select id="iw-${i}">${['자동이체','카드','현금'].map(p=>`<option${ins.payment===p?' selected':''}>${p}</option>`).join('')}</select></div>
         <div class="form-group"><label>납입상태</label><select id="it-${i}">${['정상','연체','완납'].map(p=>`<option${ins.payStatus===p?' selected':''}>${p}</option>`).join('')}</select></div>
       </div>
