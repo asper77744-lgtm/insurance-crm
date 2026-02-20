@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="보험CRM">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="application-name" content="보험CRM">
 <title>보험 고객 관리</title>
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -531,19 +535,19 @@ textarea{resize:none;min-height:70px}
       <div class="form-section">
         <div class="form-section-title">👤 기본 정보</div>
         <div class="form-grid">
-          <div class="form-group"><label>이름 *</label><input type="text" id="f-name" placeholder="홍길동" autocomplete="off" lang="ko" style="ime-mode:active"></div>
+          <div class="form-group"><label>이름 *</label><input type="text" id="f-name" placeholder="홍길동" autocomplete="off" inputmode="text" lang="ko"></div>
           <div class="form-group"><label>연락처 *</label><input type="tel" id="f-phone" placeholder="010-0000-0000" oninput="formatPhone(this)" autocomplete="off"></div>
           <div class="form-group"><label>생년월일</label><input type="text" id="f-birth" placeholder="1990-01-01" maxlength="10" inputmode="numeric" oninput="formatBirth(this)"></div>
-          <div class="form-group"><label>직업</label><input type="text" id="f-job" placeholder="직업" autocomplete="off" lang="ko" style="ime-mode:active"></div>
+          <div class="form-group"><label>직업</label><input type="text" id="f-job" placeholder="직업" autocomplete="off" inputmode="text" lang="ko"></div>
           <div class="form-group full"><label>주민번호</label>
             <div class="ssn-row">
-              <input type="text" id="f-ssn1" placeholder="앞 6자리" maxlength="6" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')">
+              <input type="text" id="f-ssn1" placeholder="앞 6자리" maxlength="6" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'');if(this.value.length===6)document.getElementById('f-ssn2').focus();">
               <div class="ssn-dash">—</div>
               <input type="text" id="f-ssn2" placeholder="뒤 7자리" maxlength="7" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')">
             </div>
           </div>
-          <div class="form-group full"><label>주소</label><input type="text" id="f-address" placeholder="주소" autocomplete="off" lang="ko" style="ime-mode:active"></div>
-          <div class="form-group full"><label>이메일</label><input type="email" id="f-email" lang="en" inputmode="email" placeholder="email@example.com" autocomplete="off" style="ime-mode:inactive"></div>
+          <div class="form-group full"><label>주소</label><input type="text" id="f-address" placeholder="주소" autocomplete="off" inputmode="text" lang="ko"></div>
+          <div class="form-group full"><label>이메일</label><input type="email" id="f-email" lang="en" inputmode="email" placeholder="email@example.com" autocomplete="off"></div>
         </div>
       </div>
 
@@ -1366,6 +1370,20 @@ function setView(v){
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
+// ── IME 한글/영어 전환 (포커스 이벤트 방식) ──────────────────
+function setImeModes(){
+  // 한글 필드 목록
+  const koIds=['f-name','f-job','f-address'];
+  koIds.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('focus',function(){
+      // 한글 전환 안내 (브라우저 제한으로 직접 전환 불가)
+      // 대신 placeholder로 안내
+    });
+  });
+}
+
 function toggleCard(topEl){
   const card = topEl.closest('.customer-card');
   const body = card.querySelector('.card-body');
@@ -1690,7 +1708,7 @@ function renderCarBlock(){
     <div class="dyn-row">
       <button class="del-row-btn" onclick="delCarRow(${i})">✕</button>
       <div class="dyn-row-grid" style="padding-right:32px">
-        <div class="form-group"><label>차량번호</label><input id="cv-${i}" type="text" value="${c.plate}" placeholder="12가 3456" autocomplete="off" lang="ko" style="ime-mode:active"></div>
+        <div class="form-group"><label>차량번호</label><input id="cv-${i}" type="text" value="${c.plate}" placeholder="12가 3456" autocomplete="off" lang="ko"></div>
         <div class="form-group"><label>차량 갱신일</label><input id="cr-${i}" type="text" value="${c.renewal}" placeholder="2025-01-01" maxlength="10" inputmode="numeric" oninput="formatDate(this)"></div>
       </div>
     </div>`).join('');
@@ -1731,7 +1749,7 @@ function renderFamilyBlock(){
     <div class="dyn-row">
       <button class="del-row-btn" onclick="delFamilyRow(${i})">✕</button>
       <div class="dyn-row-grid" style="padding-right:32px">
-        <div class="form-group"><label>이름</label><input id="fn-${i}" type="text" value="${f.name||''}" placeholder="홍길동" autocomplete="off" lang="ko" style="ime-mode:active"></div>
+        <div class="form-group"><label>이름</label><input id="fn-${i}" type="text" value="${f.name||''}" placeholder="홍길동" autocomplete="off" lang="ko"></div>
         <div class="form-group"><label>관계</label><select id="fr-${i}">${RELS.map(r=>`<option${f.rel===r?' selected':''}>${r}</option>`).join('')}</select></div>
         <div class="form-group"><label>나이</label><input id="fa-${i}" type="number" value="${f.age||''}" placeholder="나이" inputmode="numeric" min="0" max="120"></div>
         <div class="form-group"><label>전화번호</label><input id="fp-${i}" type="tel" value="${f.phone||''}" placeholder="010-0000-0000" maxlength="13" oninput="formatPhone(this)"></div>
@@ -1780,8 +1798,8 @@ function renderInsBlock(){
       <button class="del-row-btn" onclick="delInsRow(${i})">✕</button>
       <div style="font-size:.72rem;font-weight:700;color:var(--primary);margin-bottom:8px;padding-right:32px">계약 ${i+1}</div>
       <div class="dyn-row-grid ins-grid" style="padding-right:4px">
-        <div class="form-group"><label>보험사</label><input id="ic-${i}" type="text" value="${ins.company}" placeholder="삼성생명" autocomplete="off" lang="ko" style="ime-mode:active"></div>
-        <div class="form-group"><label>상품명</label><input id="ip-${i}" type="text" value="${ins.product}" placeholder="종신보험" autocomplete="off" lang="ko" style="ime-mode:active"></div>
+        <div class="form-group"><label>보험사</label><input id="ic-${i}" type="text" value="${ins.company}" placeholder="삼성생명" autocomplete="off" lang="ko"></div>
+        <div class="form-group"><label>상품명</label><input id="ip-${i}" type="text" value="${ins.product}" placeholder="종신보험" autocomplete="off" lang="ko"></div>
         <div class="form-group"><label>월 보험료(원)</label><input id="im-${i}" type="number" value="${ins.premium||''}" placeholder="150000" inputmode="numeric"></div>
         <div class="form-group"><label>시작일</label><input id="is-${i}" type="text" value="${ins.startDate}" placeholder="2025-01-01" maxlength="10" inputmode="numeric" oninput="formatDate(this)"></div>
         <div class="form-group"><label>갱신/만기일</label><input id="ie-${i}" type="text" value="${ins.expiry}" placeholder="2025-01-01" maxlength="10" inputmode="numeric" oninput="formatDate(this)"></div>
@@ -2058,6 +2076,47 @@ document.querySelectorAll('.modal').forEach(m=>{
 });
 
 init();
+</script>
+<script>
+// ── PWA manifest + 아이콘 동적 생성 ─────────────────────────
+(function(){
+  // SVG 아이콘 생성 (파란 배경 + 방패)
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+    <rect width="512" height="512" rx="100" fill="#1e3a8a"/>
+    <text x="256" y="360" font-size="300" text-anchor="middle" font-family="Arial">🛡️</text>
+    <text x="256" y="460" font-size="60" text-anchor="middle" font-family="Arial,sans-serif" fill="white" font-weight="bold">보험CRM</text>
+  </svg>`;
+  const svgBlob = new Blob([svg], {type:'image/svg+xml'});
+  const svgUrl = URL.createObjectURL(svgBlob);
+
+  // apple-touch-icon 설정
+  const appleIcon = document.createElement('link');
+  appleIcon.rel = 'apple-touch-icon';
+  appleIcon.href = svgUrl;
+  document.head.appendChild(appleIcon);
+
+  // manifest.json 동적 생성
+  const manifest = {
+    name: '보험 고객 관리',
+    short_name: '보험CRM',
+    description: '보험설계사용 고객 관리 앱',
+    start_url: 'https://asper77744-lgtm.github.io/insurance-crm/',
+    scope: 'https://asper77744-lgtm.github.io/insurance-crm/',
+    display: 'standalone',
+    orientation: 'portrait',
+    background_color: '#1e3a8a',
+    theme_color: '#1e3a8a',
+    icons: [
+      { src: svgUrl, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
+    ]
+  };
+  const manifestBlob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+  const manifestUrl = URL.createObjectURL(manifestBlob);
+  const manifestLink = document.createElement('link');
+  manifestLink.rel = 'manifest';
+  manifestLink.href = manifestUrl;
+  document.head.appendChild(manifestLink);
+})();
 </script>
 </body>
 </html>
