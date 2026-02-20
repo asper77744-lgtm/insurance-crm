@@ -123,6 +123,10 @@ a.tel-link:active{opacity:.7}
 .info-chip .chip-val{font-weight:600;color:var(--text)}
 
 .card-actions{padding:0 14px 14px;display:flex;gap:7px}
+.card-body{overflow:hidden;transition:max-height .3s ease;max-height:0}
+.card-body.expanded{max-height:2000px}
+.card-expand-btn{background:none;border:none;cursor:pointer;font-size:.8rem;color:var(--muted);padding:2px 6px;border-radius:6px;transition:all .2s;margin-left:auto}
+.card-expand-btn:hover{background:var(--surface2)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:8px 14px;border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600;border:none;transition:all .15s;white-space:nowrap;font-family:inherit}
 .btn-primary{background:var(--primary);color:#fff}
 .btn-primary:active{background:#1d4ed8}
@@ -1362,6 +1366,15 @@ function setView(v){
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
+function toggleCard(topEl){
+  const card = topEl.closest('.customer-card');
+  const body = card.querySelector('.card-body');
+  const btn  = card.querySelector('.card-expand-btn');
+  const expanded = body.classList.toggle('expanded');
+  btn.textContent = expanded ? '▲' : '▼';
+  btn.style.color = expanded ? 'var(--primary)' : 'var(--muted)';
+}
+
 function renderAll(){
   const total=filteredData.length;
   const empty=document.getElementById('emptyState');
@@ -1421,41 +1434,44 @@ function renderCards(data){
     const card=document.createElement('div');
     card.className='customer-card';
     card.innerHTML=`
-      <div class="card-top">
+      <div class="card-top" onclick="toggleCard(this)" style="cursor:pointer">
         <div class="card-avatar">${ini}</div>
         <div class="card-main">
           <div class="card-name-row">
             <span class="card-name">${c.name}</span>
             <span class="badge ${bc}">${st}</span>
+            <button class="card-expand-btn" onclick="event.stopPropagation();toggleCard(this.closest('.customer-card').querySelector('.card-top'))">▼</button>
           </div>
           <div class="card-phone">${c.phone?`<a class="tel-link" href="tel:${c.phone.replace(/\D/g,'')}" onclick="event.stopPropagation()">📞 ${c.phone}</a>`:'-'}${c.job?' · '+c.job:''}</div>
           ${c.address?`<div class="card-job" style="margin-top:2px">${c.address}</div>`:''}
         </div>
       </div>
-      ${(c.family||[]).length?`<div class="card-divider"></div>
-      <div class="card-section">
-        <div class="card-section-title">👨‍👩‍👧 가족관계</div>
-        ${famHtml}
-      </div>`:''}
-      <div class="card-divider"></div>
-      <div class="card-section">
-        <div class="card-section-title">📋 보험 계약</div>
-        ${insHtml}
-      </div>
-      ${chips.length?`<div class="card-divider"></div>
-      <div class="card-section">
-        <div class="card-section-title">🚗 차량 & 실손</div>
-        <div class="info-row">${chips.join('')}</div>
-      </div>`:''}
-      ${(c.memos||[]).length?`<div class="card-divider"></div>
-      <div class="card-section">
-        <div class="card-section-title">💬 최근 메모</div>
-        <div style="font-size:.82rem;color:var(--muted);background:var(--surface2);border-radius:8px;padding:8px 10px;border-left:3px solid var(--primary-light)">${(c.memos[0]||{}).text||''}</div>
-        ${c.memos.length>1?`<div style="font-size:.72rem;color:var(--subtle);margin-top:4px">외 ${c.memos.length-1}개</div>`:''}
-      </div>`:''}
-      <div class="card-actions">
-        <button class="btn btn-outline btn-sm" style="flex:1" onclick="event.stopPropagation();openEdit(${c.id})">✏️ 수정</button>
-        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCustomer(${c.id})">🗑️</button>
+      <div class="card-body">
+        ${(c.family||[]).length?`<div class="card-divider"></div>
+        <div class="card-section">
+          <div class="card-section-title">👨‍👩‍👧 가족관계</div>
+          ${famHtml}
+        </div>`:''}
+        <div class="card-divider"></div>
+        <div class="card-section">
+          <div class="card-section-title">📋 보험 계약</div>
+          ${insHtml}
+        </div>
+        ${chips.length?`<div class="card-divider"></div>
+        <div class="card-section">
+          <div class="card-section-title">🚗 차량 & 실손</div>
+          <div class="info-row">${chips.join('')}</div>
+        </div>`:''}
+        ${(c.memos||[]).length?`<div class="card-divider"></div>
+        <div class="card-section">
+          <div class="card-section-title">💬 최근 메모</div>
+          <div style="font-size:.82rem;color:var(--muted);background:var(--surface2);border-radius:8px;padding:8px 10px;border-left:3px solid var(--primary-light)">${(c.memos[0]||{}).text||''}</div>
+          ${c.memos.length>1?`<div style="font-size:.72rem;color:var(--subtle);margin-top:4px">외 ${c.memos.length-1}개</div>`:''}
+        </div>`:''}
+        <div class="card-actions">
+          <button class="btn btn-outline btn-sm" style="flex:1" onclick="event.stopPropagation();openEdit(${c.id})">✏️ 수정</button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCustomer(${c.id})">🗑️</button>
+        </div>
       </div>
     `;
     list.appendChild(card);
