@@ -1249,7 +1249,7 @@ function showLoadingScreen(show){
 }
 
 // ── INIT ─────────────────────────────────────────────────────
-function init(){
+function initLocal(){
   const saved = loadLocal();
   if(saved){ customers = saved; }
   else { loadSampleData(); save(); }
