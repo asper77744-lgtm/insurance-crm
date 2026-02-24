@@ -1638,13 +1638,9 @@ function toggleCard(topEl){
       const toolbar = document.querySelector('.toolbar');
       const toolbarBottom = toolbar ? toolbar.getBoundingClientRect().bottom : 0;
       const cardTop = card.getBoundingClientRect().top;
-      const scrollEl = document.querySelector('.main-scroll') || window;
-      const offset = cardTop - toolbarBottom - 8; // 8px 여백
-      if(scrollEl === window){
-        window.scrollBy({top: offset, behavior:'smooth'});
-      } else {
-        scrollEl.scrollBy({top: offset, behavior:'smooth'});
-      }
+      // 현재 스크롤 위치 + 카드 위치 - toolbar 아래 위치 - 여백
+      const scrollY = window.scrollY + cardTop - toolbarBottom - 8;
+      window.scrollTo({top: scrollY, behavior:'smooth'});
     }, 50);
   }
 }
