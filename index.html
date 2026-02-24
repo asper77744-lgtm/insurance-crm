@@ -730,8 +730,13 @@ let editingId=null, currentMemos=[], currentFamily=[], currentIns=[];
 let filteredData=[], sortKey='', sortAsc=true, currentPage=1, filterStatus='';
 let currentView = 'card';
 const PAGE = 20;
-const LS_KEY = 'ins_crm_v4';
+const LS_KEY_PREFIX = 'ins_crm_v4_';
 const LS_SES = 'ins_sb_session';
+// 계정별 로컬스토리지 키 반환
+function getLsKey(){
+  const uid = _session && (_session.user.id || _session.user.sub || _session.user.email);
+  return uid ? LS_KEY_PREFIX + uid : LS_KEY_PREFIX + 'guest';
+}
 
 // ── 유틸 ─────────────────────────────────────────────────────
 function v(x){ return x || ''; }   // ← 엑셀 v() 버그 수정
@@ -758,6 +763,7 @@ async function sbSignUp(email,pw){
 }
 async function sbSignOut(){
   try{ await sbFetch('/auth/v1/logout',{method:'POST'}); }catch(e){}
+  customers = []; // 다른 계정 데이터 노출 방지
   _session=null; localStorage.removeItem(LS_SES);
 }
 async function sbResetPw(email){
@@ -809,7 +815,7 @@ async function sbSave(arr){
 // ── 저장 ─────────────────────────────────────────────────────
 function save(){
   // 로컬 항상 저장 (오프라인 대비)
-  try{ localStorage.setItem(LS_KEY, JSON.stringify(customers)); }catch(e){}
+  try{ localStorage.setItem(getLsKey(), JSON.stringify(customers)); }catch(e){}
   // Supabase 연동 시 클라우드도 저장
   if(SB_ON && _session){
     // 저장 전 세션 유효성 먼저 확인
@@ -845,7 +851,7 @@ function save(){
 }
 function loadLocal(){
   try{
-    const raw=localStorage.getItem(LS_KEY);
+    const raw=localStorage.getItem(getLsKey());
     if(raw){const p=JSON.parse(raw);if(Array.isArray(p)&&p.length)return p;}
   }catch(e){}
   return null;
@@ -1233,7 +1239,7 @@ async function afterLogin(){
         showToast(`✅ 로컬 데이터(${local.length}명)를 클라우드에 업로드했습니다.`,'success');
       } else {
         customers=cloud;
-        localStorage.setItem(LS_KEY,JSON.stringify(customers));
+        localStorage.setItem(getLsKey(),JSON.stringify(customers));
       }
     } else {
       if(local&&local.length>0){ customers=local; await sbSave(customers); }
