@@ -128,8 +128,8 @@ a.tel-link:active{opacity:.7}
 .info-chip .chip-val{font-weight:600;color:var(--text)}
 
 .card-actions{padding:0 14px 14px;display:flex;gap:7px}
-.card-body{overflow:hidden;transition:max-height .3s ease;max-height:0}
-.card-body.expanded{max-height:2000px}
+.card-body{overflow:hidden;transition:max-height .35s ease;max-height:0}
+.card-body.expanded{max-height:3000px}
 .card-expand-btn{background:none;border:none;cursor:pointer;font-size:.8rem;color:var(--muted);padding:2px 6px;border-radius:6px;transition:all .2s;margin-left:auto}
 .card-expand-btn:hover{background:var(--surface2)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:8px 14px;border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600;border:none;transition:all .15s;white-space:nowrap;font-family:inherit}
@@ -1633,15 +1633,16 @@ function toggleCard(topEl){
     const btn=card.querySelector('.card-expand-btn');
     btn.textContent='▲';
     btn.style.color='var(--primary)';
-    // toolbar 바로 아래에 카드가 오도록 스크롤
-    setTimeout(()=>{
+    // transitionend 이벤트로 애니메이션 완료 후 정확하게 스크롤
+    function doScroll(){
       const toolbar = document.querySelector('.toolbar');
       const toolbarBottom = toolbar ? toolbar.getBoundingClientRect().bottom : 0;
       const cardTop = card.getBoundingClientRect().top;
-      // 현재 스크롤 위치 + 카드 위치 - toolbar 아래 위치 - 여백
       const scrollY = window.scrollY + cardTop - toolbarBottom - 8;
       window.scrollTo({top: scrollY, behavior:'smooth'});
-    }, 50);
+      body.removeEventListener('transitionend', doScroll);
+    }
+    body.addEventListener('transitionend', doScroll);
   }
 }
 
