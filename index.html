@@ -811,9 +811,33 @@ function save(){
   try{ localStorage.setItem(LS_KEY, JSON.stringify(customers)); }catch(e){}
   // Supabase 연동 시 클라우드도 저장
   if(SB_ON && _session){
-    sbSave(customers)
-      .then(()=>updateSyncBadge('cloud'))
-      .catch(()=>updateSyncBadge('error'));
+    // 저장 전 세션 유효성 먼저 확인
+    fetch(SUPABASE_URL+'/auth/v1/user',{
+      headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_session.access_token}
+    }).then(r=>{
+      if(r.status===401){
+        // 세션 만료 - 로컬에는 저장됐으니 재로그인 안내
+        _session=null;
+        localStorage.removeItem(LS_SES);
+        updateSyncBadge('error');
+        showToast('⚠️ 로그인이 만료됐습니다. 재로그인 후 데이터가 자동 업로드됩니다.','warning');
+        setTimeout(()=>{
+          showAuthScreen(true);
+        },2500);
+        return;
+      }
+      // 세션 유효 - 클라우드 저장
+      sbSave(customers)
+        .then(()=>updateSyncBadge('cloud'))
+        .catch(err=>{
+          updateSyncBadge('error');
+          showToast('❌ 클라우드 저장 실패: '+err.message,'warning');
+        });
+    }).catch(()=>{
+      // 네트워크 오류 - 로컬에만 저장됨
+      updateSyncBadge('error');
+      showToast('⚠️ 네트워크 오류. 로컬에만 저장됐습니다.','warning');
+    });
   } else {
     updateSyncBadge('local');
   }
@@ -1199,11 +1223,18 @@ async function afterLogin(){
   showAuthScreen(false);
   try{
     const cloud=await sbLoad();
+    const local=loadLocal();
     if(cloud&&cloud.length>0){
-      customers=cloud;
-      localStorage.setItem(LS_KEY,JSON.stringify(customers));
+      // 로컬이 더 많으면 로컬 우선 (절전 중 추가한 데이터 보호)
+      if(local&&local.length>cloud.length){
+        customers=local;
+        await sbSave(customers);
+        showToast(`✅ 로컬 데이터(${local.length}명)를 클라우드에 업로드했습니다.`,'success');
+      } else {
+        customers=cloud;
+        localStorage.setItem(LS_KEY,JSON.stringify(customers));
+      }
     } else {
-      const local=loadLocal();
       if(local&&local.length>0){ customers=local; await sbSave(customers); }
       else { loadSampleData(); await sbSave(customers); }
     }
@@ -1819,6 +1850,13 @@ function fillForm(c){
 }
 function saveCustomer(){
   const g=id=>(document.getElementById('f-'+id)||{}).value||'';
+
+  // 메모 입력칸에 내용이 있으면 자동으로 추가
+  const memoInp=document.getElementById('memoInput');
+  if(memoInp && memoInp.value.trim()){
+    addMemo();
+  }
+
   const data={name:g('name'),phone:g('phone'),birth:g('birth'),ssn1:g('ssn1'),ssn2:g('ssn2'),job:g('job'),address:g('address'),email:g('email'),cars:collectCars(),carPlate:collectCars()[0]?.plate||'',carRenewal:collectCars()[0]?.renewal||'',silseonYn:(document.getElementById('f-silseonYn')||{}).value||'',silseonCo:g('silseonCo'),silseon:g('silseon'),family:collectFamily(),contracts:collectIns(),memos:currentMemos};
   if(!data.name.trim()){showToast('이름을 입력해주세요','warning');return;}
   if(editingId){
