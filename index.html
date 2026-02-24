@@ -1633,6 +1633,10 @@ function toggleCard(topEl){
     const btn=card.querySelector('.card-expand-btn');
     btn.textContent='▲';
     btn.style.color='var(--primary)';
+    // 카드 상단이 보이도록 스크롤
+    setTimeout(()=>{
+      card.scrollIntoView({behavior:'smooth', block:'start'});
+    }, 50);
   }
 }
 
