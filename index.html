@@ -1633,9 +1633,18 @@ function toggleCard(topEl){
     const btn=card.querySelector('.card-expand-btn');
     btn.textContent='▲';
     btn.style.color='var(--primary)';
-    // 카드 상단이 보이도록 스크롤
+    // toolbar 바로 아래에 카드가 오도록 스크롤
     setTimeout(()=>{
-      card.scrollIntoView({behavior:'smooth', block:'start'});
+      const toolbar = document.querySelector('.toolbar');
+      const toolbarBottom = toolbar ? toolbar.getBoundingClientRect().bottom : 0;
+      const cardTop = card.getBoundingClientRect().top;
+      const scrollEl = document.querySelector('.main-scroll') || window;
+      const offset = cardTop - toolbarBottom - 8; // 8px 여백
+      if(scrollEl === window){
+        window.scrollBy({top: offset, behavior:'smooth'});
+      } else {
+        scrollEl.scrollBy({top: offset, behavior:'smooth'});
+      }
     }, 50);
   }
 }
