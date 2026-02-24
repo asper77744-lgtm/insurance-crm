@@ -74,7 +74,8 @@ body{font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--text);
 
 /* ══ CARD LIST (mobile default) ══ */
 .card-list{display:flex;flex-direction:column;gap:10px;padding:12px 14px}
-.customer-card{background:#fff;border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:all .18s;-webkit-user-select:none;user-select:none}
+.customer-card{background:#fff;border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:all .25s;-webkit-user-select:none;user-select:none}
+.customer-card.expanded{background:#eff6ff;border-color:#93c5fd;box-shadow:0 4px 16px rgba(59,130,246,.18)}
 .customer-card:active{transform:scale(.98);box-shadow:none}
 
 .card-top{padding:14px 14px 10px;display:flex;align-items:flex-start;gap:12px}
@@ -1615,10 +1616,24 @@ function shareKakao(){
 function toggleCard(topEl){
   const card = topEl.closest('.customer-card');
   const body = card.querySelector('.card-body');
-  const btn  = card.querySelector('.card-expand-btn');
-  const expanded = body.classList.toggle('expanded');
-  btn.textContent = expanded ? '▲' : '▼';
-  btn.style.color = expanded ? 'var(--primary)' : 'var(--muted)';
+  const isExpanded = body.classList.contains('expanded');
+
+  // 모든 카드 먼저 접기
+  document.querySelectorAll('.customer-card').forEach(c=>{
+    c.querySelector('.card-body').classList.remove('expanded');
+    c.querySelector('.card-expand-btn').textContent='▼';
+    c.querySelector('.card-expand-btn').style.color='var(--muted)';
+    c.classList.remove('expanded');
+  });
+
+  // 클릭한 카드가 접혀있었으면 펼치기
+  if(!isExpanded){
+    body.classList.add('expanded');
+    card.classList.add('expanded');
+    const btn=card.querySelector('.card-expand-btn');
+    btn.textContent='▲';
+    btn.style.color='var(--primary)';
+  }
 }
 
 function renderAll(){
