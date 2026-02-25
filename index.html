@@ -812,41 +812,63 @@ async function sbSave(arr){
   }
 }
 
+// ── 세션 갱신 ────────────────────────────────────────────────
+async function refreshSession(){
+  if(!_session) return false;
+  try{
+    const r = await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
+      body: JSON.stringify({refresh_token: _session.refresh_token})
+    });
+    if(!r.ok) return false;
+    const data = await r.json();
+    if(data.access_token){
+      _session = {..._session, access_token: data.access_token, refresh_token: data.refresh_token||_session.refresh_token};
+      localStorage.setItem(LS_SES, JSON.stringify(_session));
+      return true;
+    }
+    return false;
+  }catch(e){ return false; }
+}
+
 // ── 저장 ─────────────────────────────────────────────────────
 function save(){
   // 로컬 항상 저장 (오프라인 대비)
   try{ localStorage.setItem(getLsKey(), JSON.stringify(customers)); }catch(e){}
   // Supabase 연동 시 클라우드도 저장
   if(SB_ON && _session){
-    // 저장 전 세션 유효성 먼저 확인
-    fetch(SUPABASE_URL+'/auth/v1/user',{
-      headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_session.access_token}
-    }).then(r=>{
-      if(r.status===401){
-        // 세션 만료 - 로컬에는 저장됐으니 재로그인 안내
-        _session=null;
-        localStorage.removeItem(LS_SES);
-        updateSyncBadge('error');
-        showToast('⚠️ 로그인이 만료됐습니다. 재로그인 후 데이터가 자동 업로드됩니다.','warning');
-        setTimeout(()=>{
-          showAuthScreen(true);
-        },2500);
-        return;
-      }
-      // 세션 유효 - 클라우드 저장
-      sbSave(customers)
-        .then(()=>updateSyncBadge('cloud'))
-        .catch(err=>{
-          updateSyncBadge('error');
-          showToast('❌ 클라우드 저장 실패: '+err.message,'warning');
-        });
-    }).catch(()=>{
-      // 네트워크 오류 - 로컬에만 저장됨
-      updateSyncBadge('error');
-      showToast('⚠️ 네트워크 오류. 로컬에만 저장됐습니다.','warning');
-    });
+    saveToCloud();
   } else {
     updateSyncBadge('local');
+  }
+}
+
+async function saveToCloud(){
+  try{
+    // 먼저 클라우드 저장 시도
+    await sbSave(customers);
+    updateSyncBadge('cloud');
+  }catch(err){
+    // 실패시 세션 갱신 후 재시도
+    const refreshed = await refreshSession();
+    if(refreshed){
+      try{
+        await sbSave(customers);
+        updateSyncBadge('cloud');
+        showToast('✅ 세션 갱신 후 저장 완료','success');
+      }catch(err2){
+        updateSyncBadge('error');
+        showToast('❌ 저장 실패. 다시 시도해주세요.','warning');
+      }
+    } else {
+      // 세션 완전 만료 - 재로그인 필요
+      _session=null;
+      localStorage.removeItem(LS_SES);
+      updateSyncBadge('error');
+      showToast('⚠️ 로그인이 만료됐습니다. 재로그인하면 자동으로 복구됩니다.','warning');
+      setTimeout(()=>{ showAuthScreen(true); }, 2500);
+    }
   }
 }
 function loadLocal(){
@@ -972,7 +994,7 @@ async function doLogin(){
         user = await uRes.json();
       }catch(e2){}
     }
-    _session = {access_token: res.access_token, user};
+    _session = {access_token: res.access_token, refresh_token: res.refresh_token||'', user};
     localStorage.setItem(LS_SES, JSON.stringify(_session));
     btn.textContent = '로그인';
     btn.disabled = false;
@@ -2400,6 +2422,39 @@ document.querySelectorAll('.modal').forEach(m=>{
 });
 
 init();
+
+// ── 세션 자동 체크 ────────────────────────────────────────────
+// 세션 만료 감지 후 즉시 로그인 화면으로 이동
+async function checkSessionAlive(){
+  if(!_session) return;
+  try{
+    const res = await fetch(SUPABASE_URL+'/auth/v1/user',{
+      headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_session.access_token}
+    });
+    if(res.status===401){
+      // 세션 만료 - 로컬 데이터는 유지, 세션만 제거
+      const lsKey = getLsKey();
+      _session=null;
+      localStorage.removeItem(LS_SES);
+      showToast('⚠️ 로그인이 만료됐습니다. 다시 로그인해주세요.','warning');
+      setTimeout(()=>{
+        customers=[];
+        showAuthScreen(true);
+        document.getElementById('logoutBtn').style.display='none';
+      },1500);
+    }
+  }catch(e){}
+}
+
+// 5분마다 세션 체크
+setInterval(checkSessionAlive, 5 * 60 * 1000);
+
+// 절전/탭 전환 후 화면 복귀 시 즉시 체크
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible' && _session){
+    checkSessionAlive();
+  }
+});
 </script>
 <script>
 // ── PWA manifest + 아이콘 동적 생성 ─────────────────────────
