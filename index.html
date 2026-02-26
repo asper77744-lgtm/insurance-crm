@@ -1274,6 +1274,8 @@ async function afterLogin(){
     if(sb&&_session) sb.title=_session.user.email;
     updateSyncBadge('cloud');
     applyFilter();updateStats();updateAlertBar();
+    // 자동 로그아웃 타이머 시작
+    resetActivityTimer();
   }catch(e){
     console.error('afterLogin error:',e);
     _session=null; localStorage.removeItem(LS_SES);
@@ -2423,38 +2425,62 @@ document.querySelectorAll('.modal').forEach(m=>{
 
 init();
 
-// ── 세션 자동 체크 ────────────────────────────────────────────
-// 세션 만료 감지 후 즉시 로그인 화면으로 이동
-async function checkSessionAlive(){
+
+// ── 자동 로그아웃 ────────────────────────────────────────────
+const AUTO_LOGOUT_MS = 30 * 60 * 1000; // 30분
+let _lastActivity = Date.now();
+let _autoLogoutTimer = null;
+
+function forceLogout(reason){
   if(!_session) return;
-  try{
-    const res = await fetch(SUPABASE_URL+'/auth/v1/user',{
-      headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_session.access_token}
-    });
-    if(res.status===401){
-      // 세션 만료 - 로컬 데이터는 유지, 세션만 제거
-      const lsKey = getLsKey();
-      _session=null;
-      localStorage.removeItem(LS_SES);
-      showToast('⚠️ 로그인이 만료됐습니다. 다시 로그인해주세요.','warning');
-      setTimeout(()=>{
-        customers=[];
-        showAuthScreen(true);
-        document.getElementById('logoutBtn').style.display='none';
-      },1500);
-    }
-  }catch(e){}
+  _session = null;
+  customers = [];
+  localStorage.removeItem(LS_SES);
+  clearTimeout(_autoLogoutTimer);
+  showToast('⚠️ ' + reason, 'warning');
+  setTimeout(()=>{
+    showAuthScreen(true);
+    const lb = document.getElementById('logoutBtn');
+    if(lb) lb.style.display='none';
+  }, 1500);
 }
 
-// 5분마다 세션 체크
-setInterval(checkSessionAlive, 5 * 60 * 1000);
+function resetActivityTimer(){
+  if(!_session) return;
+  _lastActivity = Date.now();
+  clearTimeout(_autoLogoutTimer);
+  _autoLogoutTimer = setTimeout(()=>{
+    forceLogout('30분 동안 활동이 없어 자동 로그아웃됩니다.');
+  }, AUTO_LOGOUT_MS);
+}
 
-// 절전/탭 전환 후 화면 복귀 시 즉시 체크
+// 사용자 활동 감지 (클릭, 터치, 키보드, 스크롤)
+['click','touchstart','keydown','scroll','mousedown'].forEach(evt=>{
+  document.addEventListener(evt, resetActivityTimer, {passive:true});
+});
+
+// 절전 복귀 감지 - 마지막 활동 시간과 현재 시간 비교
+let _lastTick = Date.now();
+setInterval(()=>{
+  const now = Date.now();
+  const gap = now - _lastTick;
+  // 10초 이상 차이나면 절전에서 깨어난 것으로 판단
+  if(gap > 10000 && _session){
+    forceLogout('절전 모드에서 복귀되어 보안을 위해 로그아웃됩니다.');
+  }
+  _lastTick = now;
+}, 3000);
+
+// 탭 전환/화면 복귀 시 활동 경과 시간 체크
 document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState === 'visible' && _session){
-    checkSessionAlive();
+    const elapsed = Date.now() - _lastActivity;
+    if(elapsed > AUTO_LOGOUT_MS){
+      forceLogout('장시간 자리를 비워 자동 로그아웃됩니다.');
+    }
   }
 });
+
 </script>
 <script>
 // ── PWA manifest + 아이콘 동적 생성 ─────────────────────────
