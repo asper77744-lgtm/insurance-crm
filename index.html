@@ -557,15 +557,15 @@ textarea{resize:none;min-height:70px}
         <div class="form-grid">
           <div class="form-group"><label>이름 *</label><input type="text" id="f-name" placeholder="홍길동" autocomplete="off" inputmode="text" lang="ko"></div>
           <div class="form-group"><label>연락처 *</label><input type="tel" id="f-phone" placeholder="010-0000-0000" oninput="formatPhone(this)" autocomplete="off"></div>
-          <div class="form-group"><label>생년월일</label><input type="text" id="f-birth" placeholder="1990-01-01" maxlength="10" inputmode="numeric" oninput="formatBirth(this)"></div>
-          <div class="form-group"><label>직업</label><input type="text" id="f-job" placeholder="직업" autocomplete="off" inputmode="text" lang="ko"></div>
           <div class="form-group full"><label>주민번호</label>
             <div class="ssn-row">
-              <input type="text" id="f-ssn1" placeholder="앞 6자리" maxlength="6" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'');if(this.value.length===6)document.getElementById('f-ssn2').focus();">
+              <input type="text" id="f-ssn1" placeholder="앞 6자리" maxlength="6" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'');if(this.value.length===6){document.getElementById('f-ssn2').focus();}">
               <div class="ssn-dash">—</div>
-              <input type="text" id="f-ssn2" placeholder="뒤 7자리" maxlength="7" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')">
+              <input type="text" id="f-ssn2" placeholder="뒤 7자리" maxlength="7" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'');autoFillBirth();">
             </div>
           </div>
+          <div class="form-group"><label>생년월일</label><input type="text" id="f-birth" placeholder="1990-01-01" maxlength="10" inputmode="numeric" oninput="formatBirth(this)"></div>
+          <div class="form-group"><label>직업</label><input type="text" id="f-job" placeholder="직업" autocomplete="off" inputmode="text" lang="ko"></div>
           <div class="form-group full"><label>주소</label><input type="text" id="f-address" placeholder="주소" autocomplete="off" inputmode="text" lang="ko"></div>
           <div class="form-group full"><label>이메일</label><input type="email" id="f-email" lang="en" inputmode="email" placeholder="email@example.com" autocomplete="off"></div>
         </div>
@@ -1929,6 +1929,34 @@ function deleteCustomer(id){
   customers=customers.filter(x=>x.id!==id);
   save();applyFilter();updateAlertBar();updateStats();
   showToast('삭제되었습니다','warning');
+}
+
+// ── 주민번호 → 생년월일 자동입력 ─────────────────────────────
+function autoFillBirth(){
+  const ssn1 = (document.getElementById('f-ssn1')||{}).value||'';
+  const ssn2 = (document.getElementById('f-ssn2')||{}).value||'';
+  if(ssn1.length !== 6 || ssn2.length < 1) return;
+
+  const genderCode = parseInt(ssn2.charAt(0));
+  const yy = ssn1.slice(0,2);
+  const mm = ssn1.slice(2,4);
+  const dd = ssn1.slice(4,6);
+
+  // 뒷자리 첫째 숫자로 출생 세기 판단
+  // 1,2 → 1900년대 / 3,4 → 2000년대 / 9,0 → 1800년대 / 5,6,7,8 → 외국인
+  let century;
+  if(genderCode === 9 || genderCode === 0) century = '18';
+  else if(genderCode === 1 || genderCode === 2 || genderCode === 5 || genderCode === 6) century = '19';
+  else if(genderCode === 3 || genderCode === 4 || genderCode === 7 || genderCode === 8) century = '20';
+  else return;
+
+  const birthVal = `${century}${yy}-${mm}-${dd}`;
+  const el = document.getElementById('f-birth');
+  if(el && !el.value){  // 이미 입력된 값이 있으면 덮어쓰지 않음
+    el.value = birthVal;
+    // 유효성 힌트도 표시
+    formatBirth(el);
+  }
 }
 
 // ── 생년월일 자동 포맷 ────────────────────────────────────────
