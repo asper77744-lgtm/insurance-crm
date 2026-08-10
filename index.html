@@ -1146,9 +1146,9 @@ async function doSetNewPw(){
 
   btn.textContent='변경 중...'; btn.disabled=true;
   try{
-    let bearerToken = _resetToken;
+    let bearerToken = null;
 
-    // token_hash 방식이면 먼저 verify로 access_token 교환
+    // 1단계: token_hash로 verify → access_token 획득
     if(_resetTokenHash){
       const verifyRes = await fetch(SUPABASE_URL+'/auth/v1/verify', {
         method:'POST',
@@ -1156,9 +1156,18 @@ async function doSetNewPw(){
         body: JSON.stringify({token_hash: _resetTokenHash, type:'recovery'})
       });
       const verifyData = await verifyRes.json();
-      if(verifyData.access_token) bearerToken = verifyData.access_token;
+      if(verifyData.access_token){
+        bearerToken = verifyData.access_token;
+      } else {
+        throw new Error('링크가 만료됐습니다. 비밀번호 재설정을 다시 요청해주세요.');
+      }
+    } else if(_resetToken){
+      bearerToken = _resetToken;
+    } else {
+      throw new Error('토큰이 없습니다. 비밀번호 재설정을 다시 요청해주세요.');
     }
 
+    // 2단계: access_token으로 비밀번호 변경
     const res = await fetch(SUPABASE_URL+'/auth/v1/user', {
       method:'PUT',
       headers:{
@@ -1169,19 +1178,21 @@ async function doSetNewPw(){
       body: JSON.stringify({password: pw1})
     });
     const data = await res.json();
-    if(!res.ok) throw new Error(data.message || data.error_description || '변경 실패');
+    if(!res.ok) throw new Error(data.message || data.error_description || data.msg || '변경 실패');
+
     document.getElementById('newPwSuccess').style.display='block';
     document.getElementById('btnNewPw').style.display='none';
     // 3초 후 로그인 화면으로
     setTimeout(()=>{
       _resetToken = null;
+      _resetTokenHash = null;
       document.getElementById('newPwForm').style.display='none';
       document.getElementById('loginForm').style.display='flex';
       document.getElementById('tabLogin').classList.add('auth-tab-active');
       document.getElementById('tabSignup').classList.remove('auth-tab-active');
     }, 3000);
   }catch(e){
-    err.innerHTML='<span style="color:#fca5a5">❌ 오류: '+e.message+'</span>';
+    err.innerHTML='<span style="color:#fca5a5">❌ '+e.message+'</span>';
   }finally{
     btn.textContent='🔐 비밀번호 변경하기'; btn.disabled=false;
   }
