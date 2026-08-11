@@ -1511,6 +1511,7 @@ function applyFilter(){
     return matchQ&&matchSt;
   });
   if(sortKey)filteredData.sort((a,b)=>sortAsc?(a[sortKey]||'').localeCompare(b[sortKey]||''):(b[sortKey]||'').localeCompare(a[sortKey]||''));
+  else filteredData.reverse(); // 기본: 최신 입력순 (역순)
   currentPage=1;
   renderAll();
 }
