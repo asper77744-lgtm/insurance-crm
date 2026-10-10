@@ -425,6 +425,44 @@ textarea{resize:none;min-height:70px}
 .auth-btn:disabled{opacity:.5;cursor:not-allowed}
 .auth-link{background:none;border:none;color:rgba(255,255,255,.6);font-size:.82rem;cursor:pointer;text-align:center;padding:4px;font-family:inherit}
 .auth-link:hover{color:rgba(255,255,255,.9)}
+
+/* ── 고객 직접입력 (접수함 / 요청 / 건강확인서) ── */
+.app-logo{white-space:nowrap;min-width:0}
+@media (max-width:440px){
+  .app-logo{font-size:.9rem}
+  .header-actions{gap:4px}
+  .header-actions .icon-btn{width:32px;height:32px;font-size:.9rem}
+  #syncBadge{display:none}
+}
+.inbox-badge{position:absolute;top:-5px;right:-5px;background:#ef4444;color:#fff;font-size:.62rem;font-weight:700;min-width:17px;height:17px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid #1e40af}
+.seg{display:flex;background:var(--bg);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:none;background:none;padding:9px 6px;border-radius:8px;font-size:.84rem;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit}
+.seg button.on{background:#fff;color:var(--primary);box-shadow:var(--shadow)}
+.ib-sec{font-size:.78rem;font-weight:700;color:var(--muted);margin:16px 0 8px}
+.ib-sec:first-child{margin-top:0}
+.ib-item{border:1px solid var(--border);border-radius:12px;padding:11px 12px;margin-bottom:8px;background:#fff}
+.ib-head{display:flex;align-items:center;gap:8px}
+.ib-name{font-weight:700;font-size:.92rem}
+.ib-kind{font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--primary-bg);color:var(--primary)}
+.ib-kind.med{background:#fef2f2;color:#b91c1c}
+.ib-time{margin-left:auto;font-size:.72rem;color:var(--subtle)}
+.ib-sub{font-size:.78rem;color:var(--muted);margin-top:4px}
+.ib-acts{display:flex;gap:6px;margin-top:9px}
+.ib-detail{background:var(--surface2);border-radius:9px;padding:9px 11px;margin-top:9px;font-size:.8rem;line-height:1.75}
+.ib-detail b{display:inline-block;width:64px;color:var(--muted);font-weight:600}
+.ib-empty{font-size:.8rem;color:var(--subtle);text-align:center;padding:14px;border:1px dashed var(--border);border-radius:10px}
+.req-link{font-family:ui-monospace,Menlo,monospace;font-size:.72rem;word-break:break-all;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--muted)}
+.mv-q{padding:10px 0;border-bottom:1px solid var(--border)}
+.mv-q:last-child{border-bottom:none}
+.mv-qt{font-size:.82rem;color:var(--text)}
+.mv-a{display:inline-block;font-size:.74rem;font-weight:700;padding:2px 9px;border-radius:99px;margin-top:5px;background:#f1f5f9;color:var(--muted)}
+.mv-a.yes{background:#fee2e2;color:#b91c1c}
+.mv-d{font-size:.78rem;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:7px 9px;margin-top:6px;line-height:1.6}
+.mv-meta{font-size:.76rem;color:var(--muted);line-height:1.8;background:var(--surface2);border-radius:9px;padding:10px 12px}
+.mv-meta code{font-size:.68rem;word-break:break-all}
+.mv-sig{max-width:240px;width:100%;border:1px solid var(--border);border-radius:8px;background:#fff}
+.med-rec{display:flex;align-items:center;gap:8px;font-size:.8rem;padding:7px 10px;background:#fef2f2;border-radius:8px;margin-bottom:5px}
+.med-rec .yes{color:#b91c1c;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
 
 <!-- HEADER -->
@@ -432,6 +470,7 @@ textarea{resize:none;min-height:70px}
   <div class="app-logo">🛡️ 보험 고객 관리</div>
   <span id="syncBadge" style="font-size:.68rem;color:rgba(255,255,255,.5);white-space:nowrap;margin-right:4px">⏳</span>
   <div class="header-actions">
+    <button id="inboxBtn" class="icon-btn" onclick="openInbox()" title="고객 입력 접수함" style="display:none;position:relative">📥<span id="inboxBadge" class="inbox-badge" style="display:none">0</span></button>
     <button class="icon-btn" onclick="exportExcel()" title="엑셀 내보내기">📊</button>
     <button class="icon-btn" onclick="openBackupModal()" title="백업/복원">🔒</button>
     <button class="icon-btn" onclick="window.print()" title="인쇄">🖨️</button>
@@ -658,6 +697,79 @@ textarea{resize:none;min-height:70px}
           beegood@naver.com
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- 접수함 MODAL -->
+<div class="modal-overlay" id="inboxModal" onclick="if(event.target===this)closeInbox()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">📥 고객 입력 접수함</div>
+      <button class="modal-close" onclick="closeInbox()">✕</button>
+    </div>
+    <div class="modal-body">
+      <button class="btn btn-primary btn-full" onclick="openRequest({kind:'basic'})">＋ 새 고객에게 기본정보 입력 요청</button>
+      <div style="font-size:.74rem;color:var(--subtle);margin:6px 2px 14px">건강 상태 확인서(병력설문)는 고객 카드의 🩺 버튼으로 보냅니다.</div>
+      <div id="inboxBody"><div class="ib-empty">불러오는 중...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 입력 요청 MODAL -->
+<div class="modal-overlay" id="requestModal" style="z-index:600" onclick="if(event.target===this)closeRequest()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="reqTitle">📨 입력 요청 보내기</div>
+      <button class="modal-close" onclick="closeRequest()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="reqForm">
+        <div class="form-section">
+          <div class="seg" id="reqKindSeg">
+            <button data-k="basic" onclick="setReqKind('basic')">📝 1단계 기본정보</button>
+            <button data-k="medical" onclick="setReqKind('medical')">🩺 2단계 건강확인서</button>
+          </div>
+          <div id="reqKindHint" style="font-size:.76rem;color:var(--muted);margin-top:7px"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label>고객 이름 *</label><input type="text" id="req-name" placeholder="홍길동"></div>
+          <div class="form-group"><label>고객 휴대폰 (문자 발송용)</label><input type="tel" id="req-phone" placeholder="010-0000-0000" oninput="formatPhone(this)"></div>
+          <div class="form-group"><label>내 이름 (고객 화면에 표시)</label><input type="text" id="req-agent" placeholder="예: 김OO 설계사"></div>
+          <div class="form-group"><label>유효기간</label>
+            <select id="req-days"><option value="1">1일</option><option value="3" selected>3일</option><option value="7">7일</option></select></div>
+        </div>
+        <button class="btn btn-primary btn-full" style="margin-top:14px" id="reqMakeBtn" onclick="createRequest()">🔗 링크 만들기</button>
+      </div>
+      <div id="reqResult" style="display:none">
+        <div style="font-size:.85rem;font-weight:700;margin-bottom:6px">보낼 메시지</div>
+        <textarea id="reqMsg" rows="6" style="width:100%;font-size:.84rem;line-height:1.6"></textarea>
+        <div class="req-link" id="reqLink" style="margin-top:8px"></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <a class="btn btn-primary" style="flex:1;text-decoration:none" id="reqSms">📱 문자로 보내기</a>
+          <button class="btn btn-outline" style="flex:1" onclick="shareRequest()">📤 공유</button>
+          <button class="btn btn-outline" onclick="copyRequest()">📋</button>
+        </div>
+        <div style="font-size:.74rem;color:var(--subtle);margin-top:10px">링크는 1회만 제출할 수 있고, 유효기간이 지나면 열리지 않습니다. 제출되면 📥 접수함에 표시됩니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 건강확인서 보기 MODAL -->
+<div class="modal-overlay" id="medViewModal" style="z-index:650" onclick="if(event.target===this)closeMedView()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">🩺 건강 상태 확인서</div>
+      <button class="modal-close" onclick="closeMedView()">✕</button>
+    </div>
+    <div class="modal-body" id="medViewBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" style="flex:1" id="medVerifyBtn" onclick="verifyMed()">🔍 원본 확인</button>
+      <button class="btn btn-primary" style="flex:1" onclick="printMed()">🖨️ 인쇄 / PDF</button>
     </div>
   </div>
 </div>
@@ -1119,6 +1231,7 @@ async function doLogout(){
   customers=[];
   showAuthScreen(true);
   document.getElementById('logoutBtn').style.display='none';
+  hideInboxUI();
   updateSyncBadge('local');
   showToast('로그아웃되었습니다','warning');
 }
@@ -1322,6 +1435,9 @@ async function afterLogin(){
     }
     const sb=document.getElementById('syncBadge');
     if(sb&&_session) sb.title=_session.user.email;
+    const ib=document.getElementById('inboxBtn');
+    if(ib) ib.style.display='flex';
+    loadInbox(true);
     updateSyncBadge('cloud');
     applyFilter();updateStats();updateAlertBar();
     // 자동 로그아웃 타이머 시작
@@ -1884,8 +2000,18 @@ function renderCards(data){
             ${!firstPub&&secCnt?`<div style="font-size:.78rem;color:#ef4444">🔒 비밀 메모 ${secCnt}개</div>`:''}
           </div>`;
         })()}
+        ${(c.medicalRecords||[]).length?`<div class="card-divider"></div>
+        <div class="card-section">
+          <div class="card-section-title">🩺 건강 상태 확인서</div>
+          ${c.medicalRecords.slice().reverse().map(r=>`<div class="med-rec">
+            <span>${hx(fmtDT(r.at,true))}</span>
+            <span class="yes">${r.yes&&r.yes.length?'예: '+hx(r.yes.join(', ')):'<span style="color:#15803d">모두 아니오</span>'}</span>
+            <button class="btn btn-outline btn-sm" style="padding:4px 9px" onclick="event.stopPropagation();openMedView(${Number(r.sid)})">보기</button>
+          </div>`).join('')}
+        </div>`:''}
         <div class="card-actions">
           <button class="btn btn-outline btn-sm" style="flex:1" onclick="event.stopPropagation();openEdit(${c.id})">✏️ 수정</button>
+          <button class="btn btn-outline btn-sm" style="flex:1;color:#b91c1c" onclick="event.stopPropagation();openRequest({kind:'medical',customerId:${c.id}})">🩺 병력설문</button>
           <button class="btn btn-outline btn-sm" style="flex:1;color:#1e3a8a" onclick="event.stopPropagation();openShare(${c.id})">📤 공유</button>
           <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCustomer(${c.id})">🗑️</button>
         </div>
@@ -2572,6 +2698,7 @@ function forceLogout(reason){
     showAuthScreen(true);
     const lb = document.getElementById('logoutBtn');
     if(lb) lb.style.display='none';
+    hideInboxUI();
   }, 1500);
 }
 
@@ -2609,7 +2736,377 @@ document.addEventListener('visibilitychange', ()=>{
       forceLogout('장시간 자리를 비워 자동 로그아웃됩니다.');
     }
   }
+  if(document.visibilityState === 'visible' && _session) loadInbox(true);
 });
+
+// ══════════════════════════════════════════════════════════════
+//  고객 직접입력 (1단계 기본정보 / 2단계 건강 상태 확인서)
+//  Supabase: supabase/intake_setup.sql 실행 필요
+// ══════════════════════════════════════════════════════════════
+const INTAKE_URL = location.hostname.endsWith('github.io')
+  ? 'https://asper77744-lgtm.github.io/insurance-crm/intake.html'
+  : new URL('intake.html', location.href).href.split('#')[0];
+const LS_AGENT = 'ins_agent_name';
+const MED_LABEL = {m3:'3개월내 진료',m3drug:'3개월내 상시복약',y1:'1년내 재검사',y5:'5년내 입원·수술·장기치료',
+  bp:'고혈압약',dm:'당뇨',surgery:'수술·시술',disab:'장애',preg:'임신'};
+let _inbox = {subs:[], reqs:[]};
+let _req = {kind:'basic', customerId:null, link:'', msg:'', phone:''};
+let _medCur = null;
+let _inboxTimer = null;
+
+function hx(s){ return String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function clean(s){ return String(s ?? '').replace(/[<>]/g,'').trim().slice(0,300); }   // 고객 입력값 → 고객목록 저장 전 정리
+function fmtDT(iso, short){
+  if(!iso) return '';
+  const d=new Date(iso);
+  return short ? d.toLocaleDateString('ko-KR',{year:'2-digit',month:'2-digit',day:'2-digit'})
+               : d.toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+function myUid(){ return _session && (_session.user.id || _session.user.sub); }
+async function sbTry(path, opt){
+  try{ return await sbFetch(path, opt); }
+  catch(e){ if(await refreshSession()) return await sbFetch(path, opt); throw e; }
+}
+function newToken(){
+  const b=crypto.getRandomValues(new Uint8Array(24));
+  return btoa(String.fromCharCode(...b)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function hideInboxUI(){
+  const ib=document.getElementById('inboxBtn'); if(ib) ib.style.display='none';
+  clearInterval(_inboxTimer); _inboxTimer=null;
+  _inbox={subs:[],reqs:[]};
+  ['inboxModal','requestModal','medViewModal'].forEach(id=>document.getElementById(id).classList.remove('open'));
+}
+
+// ── 접수함 ───────────────────────────────────────────────────
+async function loadInbox(silent){
+  if(!SB_ON || !_session) return;
+  try{
+    const [subs, reqs] = await Promise.all([
+      sbTry('/rest/v1/intake_submissions?status=eq.pending&select=*&order=created_at.desc',{headers:{'Accept':'application/json'}}),
+      sbTry('/rest/v1/intake_requests?used_at=is.null&select=*&order=created_at.desc&limit=30',{headers:{'Accept':'application/json'}})
+    ]);
+    _inbox={subs:subs||[], reqs:(reqs||[]).filter(r=>new Date(r.expires_at)>new Date())};
+    const n=_inbox.subs.length, bd=document.getElementById('inboxBadge');
+    if(bd){ bd.textContent=n; bd.style.display=n?'flex':'none'; }
+    if(!_inboxTimer) _inboxTimer=setInterval(()=>loadInbox(true), 5*60*1000);
+    if(document.getElementById('inboxModal').classList.contains('open')) renderInbox();
+  }catch(e){
+    console.warn('inbox load',e);
+    if(!silent){
+      const msg=/intake_/.test(e.message)?'Supabase에 접수함 테이블이 아직 없습니다. intake_setup.sql을 실행해 주세요.':'접수함을 불러오지 못했습니다';
+      document.getElementById('inboxBody').innerHTML=`<div class="ib-empty">${hx(msg)}</div>`;
+    }
+  }
+}
+function openInbox(){
+  document.getElementById('inboxModal').classList.add('open');
+  document.body.style.overflow='hidden';
+  renderInbox(); loadInbox(false);
+}
+function closeInbox(){
+  document.getElementById('inboxModal').classList.remove('open');
+  document.body.style.overflow='';
+}
+function yesCount(d){ return (d.answers||[]).filter(a=>a.a==='예').length; }
+function yesLabels(d){
+  return (d.answers||[]).filter(a=>a.a==='예').map(a=>a.id==='y5major'?(a.diseases||[]).join('·'):(MED_LABEL[a.id]||('Q'+a.no)));
+}
+function renderInbox(){
+  const {subs, reqs}=_inbox;
+  let h=`<div class="ib-sec">📥 새로 들어온 정보 (${subs.length})</div>`;
+  if(!subs.length) h+=`<div class="ib-empty">새로 제출된 정보가 없습니다</div>`;
+  subs.forEach(s=>{
+    const d=s.data||{};
+    if(s.kind==='basic'){
+      const dup=findDup(d);
+      h+=`<div class="ib-item">
+        <div class="ib-head"><span class="ib-name">${hx(d.name)}</span><span class="ib-kind">기본정보</span><span class="ib-time">${hx(fmtDT(s.created_at))}</span></div>
+        <div class="ib-detail">
+          <b>주민번호</b>${hx(d.ssn1)}-${hx((d.ssn2||'').charAt(0))}******<br>
+          <b>연락처</b>${hx(d.phone)}<br>
+          ${d.email?`<b>이메일</b>${hx(d.email)}<br>`:''}
+          <b>주소</b>${hx(d.address)}<br>
+          <b>직업</b>${hx(d.job)}${d.jobDetail?' / '+hx(d.jobDetail):''}
+        </div>
+        ${dup?`<div class="ib-sub" style="color:#b45309">⚠️ 같은 이름·연락처의 고객이 이미 있습니다 → 등록 시 정보가 갱신됩니다</div>`:''}
+        <div class="ib-acts">
+          <button class="btn btn-primary btn-sm" style="flex:1" onclick="importBasic(${s.id})">✅ 고객으로 등록</button>
+          <button class="btn btn-danger btn-sm" onclick="rejectBasic(${s.id})">삭제</button>
+        </div>
+      </div>`;
+    } else {
+      const target=customers.find(c=>c.id===Number(s.customer_id));
+      const yc=yesCount(d);
+      h+=`<div class="ib-item">
+        <div class="ib-head"><span class="ib-name">${hx(d.respondent&&d.respondent.name||s.customer_name)}</span><span class="ib-kind med">건강확인서</span><span class="ib-time">${hx(fmtDT(s.created_at))}</span></div>
+        <div class="ib-sub">${yc?`<b style="color:#b91c1c">예 ${yc}건</b> · ${hx(yesLabels(d).join(', '))}`:'<span style="color:#15803d">모든 질문 아니오</span>'}</div>
+        <div class="ib-sub">연결할 고객:
+          <select id="link-${s.id}" style="font-size:.8rem;padding:4px 6px;max-width:100%">
+            ${target?'':'<option value="">— 선택 —</option>'}
+            ${customers.slice().sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(c=>`<option value="${c.id}"${target&&c.id===target.id?' selected':''}>${hx(c.name)} ${hx(c.phone||'')}</option>`).join('')}
+          </select>
+        </div>
+        <div class="ib-acts">
+          <button class="btn btn-outline btn-sm" style="flex:1" onclick="openMedView(${s.id})">📄 보기</button>
+          <button class="btn btn-primary btn-sm" style="flex:1" onclick="linkMedical(${s.id})">🔗 고객에 저장</button>
+        </div>
+      </div>`;
+    }
+  });
+  h+=`<div class="ib-sec">⏳ 작성 대기 중인 링크 (${reqs.length})</div>`;
+  if(!reqs.length) h+=`<div class="ib-empty">대기 중인 링크가 없습니다</div>`;
+  reqs.forEach(r=>{
+    h+=`<div class="ib-item" style="padding:9px 12px">
+      <div class="ib-head"><span class="ib-name" style="font-size:.86rem">${hx(r.customer_name)}</span>
+        <span class="ib-kind${r.kind==='medical'?' med':''}">${r.kind==='medical'?'건강확인서':'기본정보'}</span>
+        <span class="ib-time">~${hx(fmtDT(r.expires_at,true))}</span>
+        <button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:.72rem" onclick="resendRequest('${hx(r.token)}')">다시 보내기</button>
+        <button class="btn btn-danger btn-sm" style="padding:3px 8px;font-size:.72rem" onclick="cancelRequest('${hx(r.token)}')">취소</button>
+      </div>
+    </div>`;
+  });
+  document.getElementById('inboxBody').innerHTML=h;
+}
+function findDup(d){
+  const p=(d.phone||'').replace(/\D/g,'');
+  return customers.find(c=>c.name===clean(d.name) && (c.phone||'').replace(/\D/g,'')===p);
+}
+function birthFromSsn(a,b){
+  if(!/^\d{6}$/.test(a||'')||!b) return '';
+  const g=b.charAt(0), cen=('1256'.includes(g)?'19':'3478'.includes(g)?'20':'18');
+  return `${cen}${a.slice(0,2)}-${a.slice(2,4)}-${a.slice(4,6)}`;
+}
+async function importBasic(id){
+  const s=_inbox.subs.find(x=>x.id===id); if(!s) return;
+  const d=s.data||{};
+  const fields={
+    name:clean(d.name), phone:clean(d.phone), ssn1:clean(d.ssn1).replace(/\D/g,''), ssn2:clean(d.ssn2).replace(/\D/g,''),
+    email:clean(d.email), address:clean(d.address), job:clean(d.job)+(d.jobDetail?` (${clean(d.jobDetail)})`:'')
+  };
+  fields.birth=birthFromSsn(fields.ssn1, fields.ssn2);
+  const memo={date:new Date().toISOString().slice(0,10), text:`📝 고객 직접입력 정보 반영 (${fmtDT(s.created_at)} 제출)`};
+  const dup=findDup(d);
+  if(dup){
+    if(!confirm(`${dup.name} 고객 정보를 제출된 내용으로 갱신할까요?`)) return;
+    Object.assign(dup, fields);
+    dup.memos=[memo, ...(dup.memos||[])];
+  } else {
+    customers.push({...fields, family:[], contracts:[], cars:[], carPlate:'', carRenewal:'', silseonYn:'', silseonCo:'', silseon:'',
+      memos:[memo], id:Date.now(), createdAt:new Date().toISOString()});
+  }
+  save(); applyFilter(); updateStats(); updateAlertBar();
+  // 주민번호가 담긴 접수 원본은 등록 후 삭제
+  try{ await sbTry(`/rest/v1/intake_submissions?id=eq.${id}`,{method:'DELETE',headers:{'Prefer':'return=minimal'}}); }
+  catch(e){ try{ await sbTry(`/rest/v1/intake_submissions?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({status:'imported',imported_at:new Date().toISOString()}),headers:{'Prefer':'return=minimal'}}); }catch(e2){} }
+  showToast(`${fields.name} ${dup?'정보 갱신':'등록'} 완료`,'success');
+  _inbox.subs=_inbox.subs.filter(x=>x.id!==id);
+  loadInbox(true); renderInbox();
+}
+async function rejectBasic(id){
+  if(!confirm('제출된 정보를 삭제할까요? 되돌릴 수 없습니다.')) return;
+  try{
+    await sbTry(`/rest/v1/intake_submissions?id=eq.${id}`,{method:'DELETE',headers:{'Prefer':'return=minimal'}});
+    _inbox.subs=_inbox.subs.filter(x=>x.id!==id); renderInbox(); loadInbox(true);
+    showToast('삭제되었습니다','warning');
+  }catch(e){ showToast('삭제 실패: '+e.message,'warning'); }
+}
+async function linkMedical(id){
+  const s=_inbox.subs.find(x=>x.id===id); if(!s) return;
+  const sel=document.getElementById('link-'+id);
+  const c=customers.find(x=>x.id===Number(sel&&sel.value));
+  if(!c) return showToast('연결할 고객을 선택해 주세요','warning');
+  const d=s.data||{};
+  if(d.respondent && d.respondent.name && d.respondent.name!==c.name &&
+     !confirm(`작성자(${d.respondent.name})와 선택한 고객(${c.name}) 이름이 다릅니다. 그래도 저장할까요?`)) return;
+  try{
+    await sbTry(`/rest/v1/intake_submissions?id=eq.${id}`,{method:'PATCH',
+      body:JSON.stringify({status:'imported',customer_id:c.id,imported_at:new Date().toISOString()}),headers:{'Prefer':'return=minimal'}});
+  }catch(e){ return showToast('저장 실패: '+e.message,'warning'); }
+  const yes=yesLabels(d);
+  c.medicalRecords=[...(c.medicalRecords||[]), {sid:s.id, at:s.created_at, receipt:(s.sha256||'').slice(0,12).toUpperCase(), yes}];
+  c.memos=[{date:new Date().toISOString().slice(0,10), text:`🩺 건강 상태 확인서 접수 (${yes.length?'예: '+yes.join(', '):'모두 아니오'})`}, ...(c.memos||[])];
+  save(); applyFilter();
+  _inbox.subs=_inbox.subs.filter(x=>x.id!==id); renderInbox(); loadInbox(true);
+  showToast(`${c.name} 고객에 건강확인서 저장 완료`,'success');
+}
+async function cancelRequest(token){
+  if(!confirm('이 링크를 취소할까요? 고객이 더 이상 열 수 없습니다.')) return;
+  try{
+    await sbTry(`/rest/v1/intake_requests?token=eq.${encodeURIComponent(token)}`,{method:'DELETE',headers:{'Prefer':'return=minimal'}});
+    _inbox.reqs=_inbox.reqs.filter(r=>r.token!==token); renderInbox();
+  }catch(e){ showToast('취소 실패: '+e.message,'warning'); }
+}
+function resendRequest(token){
+  const r=_inbox.reqs.find(x=>x.token===token); if(!r) return;
+  const c=customers.find(x=>x.id===Number(r.customer_id));
+  _req={kind:r.kind, customerId:r.customer_id, phone:c?c.phone:''};
+  showRequestResult(INTAKE_URL+'?t='+r.token, r.customer_name, r.agent_name, r.expires_at);
+  document.getElementById('reqForm').style.display='none';
+  document.getElementById('requestModal').classList.add('open');
+}
+
+// ── 입력 요청 링크 만들기 ────────────────────────────────────
+function openRequest(opt){
+  if(!_session) return showToast('로그인이 필요합니다','warning');
+  const c=opt.customerId?customers.find(x=>x.id===opt.customerId):null;
+  _req={kind:opt.kind, customerId:c?c.id:null};
+  document.getElementById('req-name').value=c?c.name:'';
+  document.getElementById('req-phone').value=c?(c.phone||''):'';
+  document.getElementById('req-agent').value=localStorage.getItem(LS_AGENT)||'';
+  document.getElementById('reqForm').style.display='block';
+  document.getElementById('reqResult').style.display='none';
+  const btn=document.getElementById('reqMakeBtn'); btn.disabled=false; btn.textContent='🔗 링크 만들기';
+  setReqKind(opt.kind);
+  document.getElementById('requestModal').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeRequest(){
+  document.getElementById('requestModal').classList.remove('open');
+  if(!document.getElementById('inboxModal').classList.contains('open')) document.body.style.overflow='';
+}
+function setReqKind(k){
+  if(k==='medical' && !_req.customerId){
+    showToast('건강확인서는 고객 카드의 🩺 버튼으로 보내 주세요 (고객과 연결하기 위해)','warning'); k='basic';
+  }
+  _req.kind=k;
+  document.querySelectorAll('#reqKindSeg button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+  document.getElementById('reqTitle').textContent=k==='medical'?'🩺 건강확인서 요청':'📝 기본정보 입력 요청';
+  document.getElementById('reqKindHint').textContent=k==='medical'
+    ? '고지사항(3개월·1년·5년 내 진료, 10대 질병, 고혈압약, 당뇨, 수술 등) + 서명. 제출 원본은 수정·삭제할 수 없게 보관됩니다.'
+    : '이름, 주민번호, 연락처, 이메일, 주소, 직업 + 개인정보 동의. 등록 후 접수 원본은 자동 삭제됩니다.';
+}
+async function createRequest(){
+  const name=document.getElementById('req-name').value.trim();
+  const phone=document.getElementById('req-phone').value.trim();
+  const agent=document.getElementById('req-agent').value.trim();
+  const days=Number(document.getElementById('req-days').value)||3;
+  if(!name) return showToast('고객 이름을 입력해 주세요','warning');
+  localStorage.setItem(LS_AGENT, agent);
+  const token=newToken();
+  const expires=new Date(Date.now()+days*86400000).toISOString();
+  const btn=document.getElementById('reqMakeBtn'); btn.disabled=true; btn.textContent='만드는 중...';
+  try{
+    await sbTry('/rest/v1/intake_requests',{method:'POST',headers:{'Prefer':'return=minimal'},
+      body:JSON.stringify({token, user_id:myUid(), kind:_req.kind, customer_name:name, customer_id:_req.customerId, agent_name:agent||null, expires_at:expires})});
+  }catch(e){
+    btn.disabled=false; btn.textContent='🔗 링크 만들기';
+    const m=/intake_/.test(e.message)?'Supabase에 intake_setup.sql을 먼저 실행해 주세요':e.message;
+    return showToast('링크 생성 실패: '+m,'warning');
+  }
+  _req.phone=phone;
+  showRequestResult(INTAKE_URL+'?t='+token, name, agent, expires);
+  document.getElementById('reqForm').style.display='none';
+  loadInbox(true);
+}
+function showRequestResult(link, name, agent, expires){
+  const until=new Date(expires).toLocaleDateString('ko-KR',{month:'long',day:'numeric'});
+  const from=agent?`${agent}입니다.`:'담당 설계사입니다.';
+  const msg = _req.kind==='medical'
+    ? `[건강 상태 확인서 작성 요청]\n${name}님, 안녕하세요. ${from}\n정확한 보장 설계를 위해 아래 링크에서 건강 상태 확인서를 작성해 주세요. (약 3분 소요)\n\n${link}\n\n※ ${until}까지 1회 제출 가능합니다.`
+    : `[보험 상담 정보 입력 요청]\n${name}님, 안녕하세요. ${from}\n상담 진행을 위해 아래 링크에서 기본 정보를 입력해 주세요. (약 1분 소요)\n\n${link}\n\n※ ${until}까지 1회 제출 가능합니다.`;
+  _req.link=link; _req.msg=msg;
+  document.getElementById('reqMsg').value=msg;
+  document.getElementById('reqLink').textContent=link;
+  updateSmsHref();
+  document.getElementById('reqMsg').oninput=()=>{ _req.msg=document.getElementById('reqMsg').value; updateSmsHref(); };
+  document.getElementById('reqResult').style.display='block';
+}
+function updateSmsHref(){
+  const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const num=(_req.phone||'').replace(/\D/g,'');
+  document.getElementById('reqSms').href=`sms:${num}${ios?'&':'?'}body=${encodeURIComponent(_req.msg)}`;
+}
+async function shareRequest(){
+  if(navigator.share){ try{ await navigator.share({text:_req.msg}); }catch(e){} }
+  else copyRequest();
+}
+async function copyRequest(){
+  try{ await navigator.clipboard.writeText(_req.msg); showToast('메시지를 복사했습니다','success'); }
+  catch(e){ const t=document.getElementById('reqMsg'); t.select(); document.execCommand('copy'); showToast('메시지를 복사했습니다','success'); }
+}
+
+// ── 건강 상태 확인서 보기 / 인쇄 ─────────────────────────────
+async function openMedView(sid){
+  let s=_inbox.subs.find(x=>x.id===sid);
+  const body=document.getElementById('medViewBody');
+  body.innerHTML='<div class="ib-empty">불러오는 중...</div>';
+  document.getElementById('medViewModal').classList.add('open');
+  document.body.style.overflow='hidden';
+  const vb=document.getElementById('medVerifyBtn'); vb.textContent='🔍 원본 확인'; vb.disabled=false;
+  try{
+    if(!s){
+      const rows=await sbTry(`/rest/v1/intake_submissions?id=eq.${Number(sid)}&select=*`,{headers:{'Accept':'application/json'}});
+      s=rows&&rows[0];
+    }
+    if(!s) throw new Error('기록을 찾을 수 없습니다');
+    _medCur=s;
+    body.innerHTML=medHtml(s);
+  }catch(e){ body.innerHTML=`<div class="ib-empty">${hx(e.message)}</div>`; }
+}
+function closeMedView(){
+  document.getElementById('medViewModal').classList.remove('open');
+  if(!document.getElementById('inboxModal').classList.contains('open')) document.body.style.overflow='';
+}
+function medHtml(s){
+  const d=s.data||{}, m=s.meta||{}, r=d.respondent||{}, ls=d.lifestyle||{};
+  const det=x=>[x.disease, x.when, x.hospital, x.treat, x.state, x.note].filter(Boolean).map(hx).join(' · ');
+  return `
+  <div class="mv-meta" style="margin-bottom:12px">
+    <b>작성자</b> ${hx(r.name)} (생년월일 ${hx(r.birth6)})<br>
+    <b>제출 시각</b> ${hx(fmtDT(s.created_at))} <span style="color:var(--subtle)">(서버 기록)</span><br>
+    <b>접수번호</b> ${hx((s.sha256||'').slice(0,12).toUpperCase())}<br>
+    <b>양식</b> ${hx(d.version)}
+  </div>
+  <div style="font-size:.85rem;font-weight:700;color:var(--primary);margin-bottom:4px">고지 사항</div>
+  ${(d.answers||[]).map(a=>`<div class="mv-q">
+    <div class="mv-qt">${a.no}. ${hx(a.q)}</div>
+    <span class="mv-a${a.a==='예'?' yes':''}">${hx(a.a)}</span>
+    ${a.diseases&&a.diseases.length?`<div class="mv-d"><b>해당 질병:</b> ${hx(a.diseases.join(', '))}</div>`:''}
+    ${(a.details||[]).map(x=>`<div class="mv-d">${det(x)}</div>`).join('')}
+  </div>`).join('')}
+  <div style="font-size:.85rem;font-weight:700;color:var(--primary);margin:14px 0 6px">생활 습관 · 복용 약</div>
+  <div class="mv-meta">
+    <b>복용 약</b> ${hx(ls.meds||'-')}<br>
+    <b>흡연</b> ${hx(ls.smoke||'-')} · <b>음주</b> ${hx(ls.drink||'-')}<br>
+    <b>키/몸무게</b> ${hx(ls.height||'-')}cm / ${hx(ls.weight||'-')}kg
+  </div>
+  <div style="font-size:.85rem;font-weight:700;color:var(--primary);margin:14px 0 6px">동의 · 서명</div>
+  <div class="mv-meta">
+    ${(m.consents||[]).map(c=>`✔ ${hx(c.text)}`).join('<br>')}<br>
+    <i>“${hx(d.pledge)}”</i>
+  </div>
+  ${d.signature&&/^data:image\/png;base64,/.test(d.signature)?`<div style="margin-top:8px"><img class="mv-sig" src="${d.signature}" alt="서명"></div>`:''}
+  <div class="mv-meta" style="margin-top:12px">
+    <b>기기</b> ${hx(m.user_agent||'-')}<br>
+    <b>위변조 확인값(SHA-256)</b><br><code>${hx(s.sha256)}</code>
+  </div>`;
+}
+async function verifyMed(){
+  if(!_medCur) return;
+  const vb=document.getElementById('medVerifyBtn'); vb.disabled=true; vb.textContent='확인 중...';
+  try{
+    const ok=await sbTry('/rest/v1/rpc/verify_intake',{method:'POST',body:JSON.stringify({p_id:_medCur.id})});
+    vb.textContent= ok===true ? '✅ 제출 원본과 일치' : '❌ 불일치';
+    showToast(ok===true?'제출 당시 원본 그대로입니다':'원본과 일치하지 않습니다', ok===true?'success':'warning');
+  }catch(e){ vb.disabled=false; vb.textContent='🔍 원본 확인'; showToast('확인 실패: '+e.message,'warning'); }
+}
+function printMed(){
+  if(!_medCur) return;
+  const r=(_medCur.data||{}).respondent||{};
+  const w=window.open('','_blank');
+  if(!w) return showToast('팝업이 차단되었습니다','warning');
+  const css=[...document.querySelectorAll('style')].map(s=>s.textContent).join('\n');
+  w.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>건강상태확인서_${hx(r.name)}_${hx(fmtDT(_medCur.created_at,true))}</title>
+    <style>${css}
+    body{background:#fff;padding:24px;max-width:760px;margin:0 auto;display:block;overflow:visible;height:auto}
+    .mv-q{break-inside:avoid}
+    @media print{body{padding:0}}</style></head>
+    <body><h2 style="font-size:1.15rem;margin-bottom:14px">건강 상태 사전 확인서</h2>${medHtml(_medCur)}
+    <p style="font-size:.72rem;color:#64748b;margin-top:16px">본 문서는 고객이 직접 작성·서명하여 온라인으로 제출한 원본을 출력한 것입니다. 출력일시: ${hx(fmtDT(new Date().toISOString()))}</p>
+    <script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);
+  w.document.close();
+}
 
 </script>
 <script>
